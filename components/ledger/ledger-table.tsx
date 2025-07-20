@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/use-toast"
 import {
   Loader2,
   FileDown,
-  // Eye,
+  Eye,
   ArrowUpDown,
   Edit,
   Trash2,
@@ -18,7 +18,7 @@ import {
   CheckCircle,
   RefreshCcw,
   CreditCard,
-  // DollarSign,
+  DollarSign,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { markLedgerEntryAsPaid, deleteLedgerEntry } from "@/lib/actions"
@@ -45,6 +45,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { InlineCreditSettings } from "@/components/ledger/credit-limit-settings"
+
+export interface CreditSettings {
+  creditLimit: number
+  gracePeriod: number
+  interestRate: number
+  fineAmount: number
+}
 
 interface LedgerTableProps {
   customerId: string
@@ -147,7 +154,14 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
         }
 
         // For paid entries, balance should be 0
-        // const entryBalance = entry.status === "Paid" ? 0 : runningBalance
+        let entryBalance =
+          entry.balance !== undefined
+            ? entry.balance
+            : entry.status === "Paid"
+              ? 0
+              : entry.type === "Payment In"
+                ? entry.amount - (entry.settledAmount || 0)
+                : runningBalance
 
         // Calculate days count based on status
         let daysCount = 0
@@ -162,7 +176,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
           daysCount = differenceInDays(today, new Date(entry.date))
 
           // Update status to Overdue if past grace period
-          if (daysCount > settingsData.gracePeriod) {
+          if (daysCount > settingsData.gracePeriod && entry.type === "Sell") {
             status = "Overdue"
 
             // Calculate interest for overdue entries
@@ -171,29 +185,32 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
             interest = entry.amount * dailyRate * daysWithInterest
           }
 
-          // Add to unpaid entries list if it's a "Sell" type
-          if (entry.type === "Sell") {
+          // Add to unpaid entries list if it's a "Sell" type and not fully paid
+          if (entry.type === "Sell" && status !== "Paid") {
             unpaidEntriesList.push({
               ...entry,
               daysCount,
               interest: interest.toFixed(2),
               status,
-              balance: entry.amount + interest,
+              balance: entry.balance !== undefined ? entry.balance : entry.amount + interest,
             })
           }
         }
 
-        // Calculate balance based on status
-        let balance = 0
-        if (status === "Overdue") {
-          balance = entry.amount + interest
-        } else if (status === "Unpaid") {
-          balance = entry.amount
+        // Calculate balance based on status and type
+        if (entry.balance === undefined) {
+          if (status === "Overdue") {
+            entryBalance = entry.amount + interest - (entry.partialPaymentAmount || 0)
+          } else if (status === "Unpaid" && entry.type === "Sell") {
+            entryBalance = entry.amount - (entry.partialPaymentAmount || 0)
+          } else if (entry.type === "Payment In") {
+            entryBalance = entry.amount - (entry.settledAmount || 0)
+          }
         }
 
         return {
           ...entry,
-          balance,
+          balance: entryBalance,
           daysCount,
           interest: interest.toFixed(2),
           status, // Updated status
@@ -319,6 +336,15 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
       return
     }
 
+    // Check if payment entry has any remaining balance to settle
+    if (entry.balance === 0 || entry.settledAmount === entry.amount) {
+      toast({
+        title: "Payment already settled",
+        description: "This payment has already been fully settled.",
+      })
+      return
+    }
+
     // Check if there are any unpaid entries
     if (unpaidEntries.length === 0) {
       toast({
@@ -328,8 +354,11 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
       return
     }
 
+    // Calculate remaining amount to settle
+    const remainingToSettle = entry.balance !== undefined ? entry.balance : entry.amount - (entry.settledAmount || 0)
+
     setPaymentInAmount(entry.amount)
-    setRemainingCredit(entry.amount)
+    setRemainingCredit(remainingToSettle)
     setPaymentEntryId(entry._id)
     setShowSettlementDialog(true)
   }
@@ -414,47 +443,47 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
   }
 
   // Update customer credit limit
-  // const updateCustomerCreditLimit = async (additionalCredit: number) => {
-  //   try {
-  //     // Get current credit settings
-  //     const response = await fetch(`/api/customers/${customerId}/credit-settings`)
-  //     if (!response.ok) throw new Error("Failed to fetch credit settings")
+  const updateCustomerCreditLimit = async (additionalCredit: number) => {
+    try {
+      // Get current credit settings
+      const response = await fetch(`/api/customers/${customerId}/credit-settings`)
+      if (!response.ok) throw new Error("Failed to fetch credit settings")
 
-  //     const settings = await response.json()
+      const settings = await response.json()
 
-  //     // Update credit limit
-  //     const updatedSettings = {
-  //       ...settings,
-  //       creditLimit: settings.creditLimit + additionalCredit,
-  //     }
+      // Update credit limit
+      const updatedSettings = {
+        ...settings,
+        creditLimit: settings.creditLimit + additionalCredit,
+      }
 
-  //     // Save updated settings
-  //     const updateResponse = await fetch(`/api/customers/${customerId}/credit-settings`, {
-  //       method: "PUT",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify(updatedSettings),
-  //     })
+      // Save updated settings
+      const updateResponse = await fetch(`/api/customers/${customerId}/credit-settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedSettings),
+      })
 
-  //     if (!updateResponse.ok) throw new Error("Failed to update credit limit")
+      if (!updateResponse.ok) throw new Error("Failed to update credit limit")
 
-  //     toast({
-  //       title: "Credit limit updated",
-  //       description: `₹${additionalCredit.toFixed(2)} added to customer's credit limit. New limit: ₹${updatedSettings.creditLimit.toFixed(2)}`,
-  //     })
+      toast({
+        title: "Credit limit updated",
+        description: `₹${additionalCredit.toFixed(2)} added to customer's credit limit. New limit: ₹${updatedSettings.creditLimit.toFixed(2)}`,
+      })
 
-  //     // Update local state
-  //     setCreditSettings(updatedSettings)
-  //   } catch (error) {
-  //     console.error("Error updating credit limit:", error)
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to update credit limit",
-  //       variant: "destructive",
-  //     })
-  //   }
-  // }
+      // Update local state
+      setCreditSettings(updatedSettings)
+    } catch (error) {
+      console.error("Error updating credit limit:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update credit limit",
+        variant: "destructive",
+      })
+    }
+  }
 
   // Handle download invoice
   const handleDownloadInvoice = async (entryId: string) => {
@@ -471,9 +500,9 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
   }
 
   // Handle view invoice
-  // const handleViewInvoice = (entryId: string) => {
-  //   router.push(`/invoices/${entryId.toString()}`)
-  // }
+  const handleViewInvoice = (entryId: string) => {
+    router.push(`/invoices/${entryId.toString()}`)
+  }
 
   // Handle edit entry
   const handleEditEntry = (entryId: string) => {
@@ -587,7 +616,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium">Ledger Entries</h3>
         <div className="flex gap-2">
-          {/* <Button size="sm" variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
+          <Button size="sm" variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -599,8 +628,8 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                 Refresh
               </>
             )}
-          </Button> */}
-          {/* <Button
+          </Button>
+          <Button
             size="sm"
             variant="outline"
             onClick={() => router.push(`/ledger/new-entry?customerId=${customerId}`)}
@@ -608,7 +637,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
           >
             <DollarSign className="mr-2 h-4 w-4" />
             New Entry
-          </Button> */}
+          </Button>
         </div>
       </div>
 
@@ -634,13 +663,12 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
             <span className="font-semibold">{creditSettings.interestRate}%</span>
           </p>
         </div>
-
         {showCreditSettings && (
-          <div className="mt-4">
+          <div className="mt-2">
             <InlineCreditSettings
               customerId={customerId}
               initialSettings={creditSettings}
-              onSettingsUpdate={(newSettings) => {
+              onSettingsUpdate={(newSettings: CreditSettings) => {
                 setCreditSettings(newSettings)
                 fetchData() // Refresh data with new settings
               }}
@@ -698,7 +726,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                   <TableCell>
                     <Badge
                       variant={
-                        entry.type === "Sell" ? "default" : entry.type === "Payment In" ? "default" : "destructive"
+                        entry.type === "Sell" ? "default" : entry.type === "Payment In" ? "outline" : "destructive"
                       }
                     >
                       {entry.type}
@@ -714,16 +742,16 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                         className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
                       >
                         <CheckCircle className="h-3 w-3" />
-                        Paid (after {entry.daysCount} days)
+                        Paid {entry.partiallyPaid ? "(Partial)" : ""} (after {entry.daysCount} days)
                       </Badge>
                     ) : entry.status === "Overdue" ? (
                       <Badge variant="destructive" className="flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        Overdue ({entry.daysCount} days)
+                        Overdue ({entry.daysCount} days, grace: {creditSettings.gracePeriod} days)
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
-                        Unpaid ({entry.daysCount} days, Grace: {creditSettings.gracePeriod - entry.daysCount} days left)
+                        Unpaid ({entry.daysCount} days, grace: {creditSettings.gracePeriod - entry.daysCount} days left)
                       </Badge>
                     )}
                   </TableCell>
@@ -737,17 +765,27 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-left space-x-2">
+                    <div className="flex justify-center space-x-2">
                       {/* Payment In Settlement Button */}
+                      {entry.type === "Payment In" && unpaidEntries.length > 0 && canEdit && entry.balance > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePaymentInSettlement(entry)}
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        >
+                          Settle
+                        </Button>
+                      )}
 
-                      {/* <Button
+                      <Button
                         variant="outline"
                         size="icon"
                         onClick={() => handleViewInvoice(entry._id.toString())}
                         title="View Invoice"
                       >
                         <Eye className="h-4 w-4" />
-                      </Button> */}
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"
@@ -785,16 +823,6 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                           className="text-green-600 border-green-200 hover:bg-green-50"
                         >
                           Mark Paid
-                        </Button>
-                      )}
-                      {entry.type === "Payment In" && unpaidEntries.length > 0 && canEdit && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePaymentInSettlement(entry)}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                        >
-                          Settle
                         </Button>
                       )}
                     </div>

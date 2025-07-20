@@ -23,8 +23,10 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
     creditLimit: 10000,
     gracePeriod: 30,
     interestRate: 18,
+    paymentTerms: 30,
+    fineAmount: 0,
   })
-  const [, setIsLoadingSettings] = useState(true)
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true)
 
   // Fetch overdue entries
   const fetchOverdueEntries = async () => {
@@ -140,15 +142,21 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Default Credit Limit</p>
-                <p className="text-lg font-medium">₹{creditSettings.creditLimit.toFixed(2)}</p>
+                <p className="text-lg font-medium">
+                  ₹{(creditSettings.creditLimit ?? 0).toFixed(2)}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Grace Period</p>
-                <p className="text-lg font-medium">{creditSettings.gracePeriod} days</p>
+                <p className="text-lg font-medium">
+                  {(creditSettings.gracePeriod ?? 0)} days
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Interest Rate</p>
-                <p className="text-lg font-medium">{creditSettings.interestRate}% per annum</p>
+                <p className="text-lg font-medium">
+                  {(creditSettings.interestRate ?? 0)}% per annum
+                </p>
               </div>
             </div>
           </CardContent>

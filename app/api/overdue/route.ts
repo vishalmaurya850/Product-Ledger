@@ -2,9 +2,16 @@ import { NextResponse } from "next/server"
 import { connectToDatabase, collections } from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
 
 export const dynamic = "force-dynamic" // Disable caching
+
+
+interface LedgerEntry {
+  _id: string | Object; // Adjust based on your database schema
+  dueDate: string | Date;
+  status: string;
+  amount: number;
+}
 
 export async function GET(request: Request) {
   try {
@@ -41,40 +48,22 @@ export async function GET(request: Request) {
     const today = new Date()
 
     // First try with companyId filter
-    // const query = {
-    //   dueDate: { $lt: today },
-    //   status: { $ne: "Paid" },
-    // }
+    const query = {
+      dueDate: { $lt: today },
+      status: { $ne: "Paid" },
+    }
 
     const overdueEntries = await db
-  .collection(collections.ledger)
-  .aggregate([
-    {
-      $addFields: {
-        dueDate: {
-          $add: [
-            "$date",
-            { $multiply: [settings.gracePeriod, 24 * 60 * 60 * 1000] }
-          ]
-        }
-      }
-    },
-    {
-      $match: {
-        dueDate: { $lt: today },
-        status: { $ne: "Paid" },
-        companyId: companyId,
-      }
-    },
-    { $sort: { dueDate: 1 } },
-    ...(limit ? [{ $limit: limit }] : [])
-  ])
-  .toArray();
+      .collection(collections.ledger)
+      .find(query)
+      .sort({ dueDate: 1 })
+      .limit(limit || 0) // Apply limit if provided
+      .toArray()
 
-    console.log("Overdue entries fetched:", overdueEntries)
+    console.log("Overdue entries fetched:", overdueEntries.length)
 
     // Calculate interest for each overdue entry
-    const entriesWithInterest = overdueEntries.map((entry: { dueDate: string; amount: number; _id: ObjectId; status: string }) => {
+    const entriesWithInterest = overdueEntries.map((entry:LedgerEntry) => {
       const dueDate = new Date(entry.dueDate)
       const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
 

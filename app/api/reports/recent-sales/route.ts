@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { ObjectId } from "mongodb"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -17,19 +17,31 @@ export async function GET() {
       return NextResponse.json({ error: "Permission denied" }, { status: 403 })
     }
 
-    const companyId = session.user.companyId
-    const { db } = await connectToDatabase()
-
-    // Get recent sales (type: "Sell") with customer details
-    interface Sale {
-      _id: string
-      customerId: string
-      date: Date
-      amount: number
-      [key: string]: unknown // Add additional fields as needed
+    // Support companyId from session or query param
+    let companyId = session.user.companyId
+    if (!companyId) {
+      const { searchParams } = new URL(request.url)
+      companyId = searchParams.get("companyId") || ""
     }
 
-    const recentSales: Sale[] = (await db
+    if (!companyId) {
+      return NextResponse.json({ error: "Company ID is required" }, { status: 400 })
+    }
+
+    const { db } = await connectToDatabase()
+
+    // Define a type for sale
+    interface Sale {
+      _id: ObjectId | string;
+      customerId: string;
+      companyId: string;
+      type: string;
+      date: Date;
+      [key: string]: any;
+    }
+
+    // Get recent sales (type: "Sell") with customer details
+    const recentSales = await db
       .collection(collections.ledger)
       .find({
         companyId,
@@ -37,20 +49,11 @@ export async function GET() {
       })
       .sort({ date: -1 })
       .limit(5)
-      .toArray()).map((doc: { _id: ObjectId; customerId: string; date: string; amount: number; [key: string]: unknown }) => {
-        const { _id, customerId, date, amount, ...rest } = doc; // Destructure to exclude duplicate keys
-        return {
-          _id: _id.toString(),
-          customerId,
-          date: new Date(date),
-          amount,
-          ...rest, // Spread remaining fields
-        };
-      }) as Sale[]
+      .toArray()
 
     // Get customer details for each sale
     const salesWithCustomers = await Promise.all(
-      recentSales.map(async (sale) => {
+      recentSales.map(async (sale: Sale) => {
         const customer = await db.collection(collections.customers).findOne({
           _id: new ObjectId(sale.customerId),
           companyId,

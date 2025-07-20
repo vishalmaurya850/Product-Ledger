@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -17,7 +17,17 @@ export async function GET() {
       return NextResponse.json({ error: "Permission denied" }, { status: 403 })
     }
 
-    const companyId = session.user.companyId
+    // Try to get companyId from session, fallback to query param
+    let companyId = session.user.companyId
+    if (!companyId) {
+      const { searchParams } = new URL(request.url)
+      companyId = searchParams.get("companyId") || ""
+    }
+
+    if (!companyId) {
+      return NextResponse.json({ error: "Company ID is required" }, { status: 400 })
+    }
+
     const { db } = await connectToDatabase()
 
     // Get data for the last 6 months

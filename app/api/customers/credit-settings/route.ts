@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections, Customer } from "@/lib/db"
+import { connectToDatabase, collections } from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
 export const dynamic = "force-dynamic" // Disable caching
+
+interface Customer {
+  _id: string;
+  name: string;
+  companyId: string;
+}
 
 export async function GET() {
   try {
@@ -56,7 +62,7 @@ export async function GET() {
         const availableCredit = settings.creditLimit - creditUsed
 
         return {
-          customerId: customer._id ? customer._id.toString() : "",
+          customerId: customer._id.toString(),
           customerName: customer.name,
           creditLimit: settings.creditLimit,
           gracePeriod: settings.gracePeriod,

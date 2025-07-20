@@ -28,7 +28,7 @@ export function RecentSales({ companyId }: RecentSalesProps) {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch("/api/reports/recent-sales")
+        const response = await fetch(`/api/reports/recent-sales?companyId=${companyId}`)
         if (response.ok) {
           const data = await response.json()
           setRecentSales(data)

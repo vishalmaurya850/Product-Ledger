@@ -155,45 +155,45 @@ export default function OverduePage() {
 
   const { toast } = useToast()
 
-  // const createTestData = async () => {
-  //   try {
-  //     setIsLoading(true)
-  //     const response = await fetch("/api/test/create-overdue", {
-  //       method: "POST",
-  //     })
+  const createTestData = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/test/create-overdue", {
+        method: "POST",
+      })
 
-  //     if (!response.ok) {
-  //       throw new Error("Failed to create test data")
-  //     }
+      if (!response.ok) {
+        throw new Error("Failed to create test data")
+      }
 
-  //     const data = await response.json()
-  //     toast({
-  //       title: "Test data created",
-  //       description: data.message,
-  //     })
+      const data = await response.json()
+      toast({
+        title: "Test data created",
+        description: data.message,
+      })
 
-  //     // Refresh the entries list
-  //     fetchOverdueEntries()
-  //   } catch (error) {
-  //     console.error("Error creating test data:", error)
-  //     toast({
-  //       title: "Error",
-  //       description: "Failed to create test data",
-  //       variant: "destructive",
-  //     })
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }
+      // Refresh the entries list
+      fetchOverdueEntries()
+    } catch (error) {
+      console.error("Error creating test data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create test data",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Overdue Payments</h2>
         <div className="flex items-center space-x-2">
-          {/* <Button variant="outline" onClick={createTestData} disabled={isLoading}>
+          <Button variant="outline" onClick={createTestData} disabled={isLoading}>
             Create Test Data
-          </Button> */}
+          </Button>
           <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? (
               <>

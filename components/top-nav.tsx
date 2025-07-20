@@ -47,7 +47,7 @@ export function TopNav({ companyName }: { companyName?: string | null }) {
 
       {/* Company Name Display */}
       <div className="flex-1">
-      {companyName && <h2 className="text-lg font-semibold">{companyName}</h2>}
+      {session?.user.companyName && <h2 className="text-lg font-semibold">{session.user.companyName}</h2>}
 
       </div>
 

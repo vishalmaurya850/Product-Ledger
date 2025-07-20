@@ -1,20 +1,21 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { toast } from "@/components/ui/use-toast"
-import { Loader2, Save } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Settings, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import type { CreditSettings } from "@/components/ledger/ledger-table"
 
-export interface CreditSettings {
-  creditLimit: number
-  gracePeriod: number
-  interestRate: number
-}
 
 interface InlineCreditSettingsProps {
   customerId: string
@@ -23,18 +24,12 @@ interface InlineCreditSettingsProps {
 }
 
 export function InlineCreditSettings({ customerId, initialSettings, onSettingsUpdate }: InlineCreditSettingsProps) {
-  const [settings, setSettings] = useState<CreditSettings>({
-    creditLimit: initialSettings.creditLimit || 10000,
-    gracePeriod: initialSettings.gracePeriod || 30,
-    interestRate: initialSettings.interestRate || 18,
-  })
-  const [isSaving, setIsSaving] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [settings, setSettings] = useState<CreditSettings>(initialSettings)
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSaving(true)
-
+  const handleSave = async () => {
+    setIsLoading(true)
     try {
       const response = await fetch(`/api/customers/${customerId}/credit-settings`, {
         method: "PUT",
@@ -45,93 +40,94 @@ export function InlineCreditSettings({ customerId, initialSettings, onSettingsUp
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to update settings: ${response.status}`)
+        throw new Error("Failed to update credit settings")
       }
 
       const updatedSettings = await response.json()
-
-      // Call the callback with updated settings
       onSettingsUpdate(updatedSettings)
-
-      toast({
-        title: "Settings updated",
-        description: "Credit limit settings have been updated successfully",
-      })
+      setIsOpen(false)
+      toast.success("Credit settings updated successfully")
     } catch (error) {
       console.error("Error updating credit settings:", error)
-      toast({
-        title: "Error",
-        description: "Failed to update credit settings",
-        variant: "destructive",
-      })
+      toast.error("Failed to update credit settings")
     } finally {
-      setIsSaving(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="creditLimit">Credit Limit (₹)</Label>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Credit Settings</DialogTitle>
+          <DialogDescription>Update the credit limit and payment terms for this customer.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="creditLimit" className="text-right">
+              Credit Limit
+            </Label>
             <Input
               id="creditLimit"
               type="number"
-              min="0"
-              step="1000"
               value={settings.creditLimit}
-              onChange={(e) => setSettings({ ...settings, creditLimit: Number(e.target.value) })}
-              required
+              onChange={(e) => setSettings({ ...settings, creditLimit: Number.parseFloat(e.target.value) || 0 })}
+              className="col-span-3"
             />
-            <p className="text-xs text-muted-foreground">Maximum credit allowed for this customer</p>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="gracePeriod">Grace Period (Days)</Label>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="paymentTerms" className="text-right">
+              Payment Terms (days)
+            </Label>
             <Input
-              id="gracePeriod"
+              id="paymentTerms"
               type="number"
-              min="0"
-              max="365"
               value={settings.gracePeriod}
-              onChange={(e) => setSettings({ ...settings, gracePeriod: Number(e.target.value) })}
-              required
+              onChange={(e) => setSettings({ ...settings, gracePeriod: Number.parseInt(e.target.value) || 0 })}
+              className="col-span-3"
             />
-            <p className="text-xs text-muted-foreground">Days before interest starts accruing</p>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="interestRate">Annual Interest Rate (%)</Label>
-            <div className="flex items-center gap-4">
-              <Input
-                id="interestRate"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={settings.interestRate}
-                onChange={(e) => setSettings({ ...settings, interestRate: Number(e.target.value) })}
-                required
-              />
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </>
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">Interest rate applied after grace period</p>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="interestRate" className="text-right">
+              Interest Rate (%)
+            </Label>
+            <Input
+              id="interestRate"
+              type="number"
+              step="0.01"
+              value={settings.interestRate}
+              onChange={(e) => setSettings({ ...settings, interestRate: Number.parseFloat(e.target.value) || 0 })}
+              className="col-span-3"
+            />
           </div>
-        </form>
-      </CardContent>
-    </Card>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fineAmount" className="text-right">
+              Fine Amount
+            </Label>
+            <Input
+              id="fineAmount"
+              type="number"
+              value={settings.fineAmount}
+              onChange={(e) => setSettings({ ...settings, fineAmount: Number.parseFloat(e.target.value) || 0 })}
+              className="col-span-3"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

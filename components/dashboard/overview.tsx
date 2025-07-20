@@ -15,7 +15,7 @@ export function Overview({ companyId }: OverviewProps) {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch("/api/reports/overview")
+        const response = await fetch(`/api/reports/overview?companyId=${companyId}`)
         if (response.ok) {
           const chartData = await response.json()
           setData(chartData)

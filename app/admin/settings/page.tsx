@@ -21,24 +21,23 @@ export default async function AdminSettingsPage() {
 
   // Get company details
   const { db } = await connectToDatabase()
-  const company = await db.collection(collections.companies).findOne({
+  let company = await db.collection(collections.companies).findOne({
     _id: new ObjectId(session.user.companyId),
   })
 
-  if (!company) {
-    // Create a default company if it doesn't exist
-    // const defaultCompany = {
-    //   name: session.user.companyName || "My Company",
-    //   createdAt: new Date(),
-    //   updatedAt: new Date(),
-    // }
 
-    // const result = await db.collection(collections.companies).insertOne(defaultCompany)
-    // const company = {
-    //   _id: result.insertedId,
-    //   ...defaultCompany,
-    // }
+  if (!company) {
+    company = {
+      _id: session.user.companyId,
+      name: session.user.companyName,
+      address: "",
+      phone: "",
+      email: session.user.email,
+      website: "",
+      logo: "",
+    }
   }
+  
 
   // Check if user can edit settings
   const canEdit = session.user.permissions?.includes("settings_edit")

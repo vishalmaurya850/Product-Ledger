@@ -54,7 +54,7 @@ export default async function DashboardPage() {
     ])
     .toArray()
 
-  // const totalOutstanding = outstandingResult.length > 0 ? outstandingResult[0].total : 0
+  const totalOutstanding = outstandingResult.length > 0 ? outstandingResult[0].total : 0
 
   // Get total overdue amount
   const overdueResult = await db
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          {/* <TabsTrigger value="overdue">Overdue</TabsTrigger> */}
+          <TabsTrigger value="overdue">Overdue</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
                 <p className="text-xs text-muted-foreground">In inventory</p>
               </CardContent>
             </Card>
-            {/* <Card>
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Overdue Amount</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -120,7 +120,7 @@ export default async function DashboardPage() {
                 <div className="text-2xl font-bold text-red-600">₹{totalOverdue.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground">{overdueCount} overdue entries</p>
               </CardContent>
-            </Card> */}
+            </Card>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">

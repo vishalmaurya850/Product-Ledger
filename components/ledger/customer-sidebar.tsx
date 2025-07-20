@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -10,38 +9,31 @@ import { Search, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface CustomerSidebarProps {
-  customers: { _id: string; name: string; phone: string; imageUrl?: string }[]
+  customers: any[]
   selectedCustomerId: string | undefined
-  onSelectCustomer: (customer: { _id: string; name: string; phone: string; imageUrl?: string }) => void
+  onSelectCustomer: (customer: any) => void
   isLoading: boolean
+  customerBalances?: Record<string, number>
 }
 
-export function CustomerSidebar({ customers, selectedCustomerId, onSelectCustomer, isLoading }: CustomerSidebarProps) {
+export function CustomerSidebar({
+  customers,
+  selectedCustomerId,
+  onSelectCustomer,
+  isLoading,
+  customerBalances = {},
+}: CustomerSidebarProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
 
   // Filter customers based on search query
   const filteredCustomers = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    customer.name?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
-
-  // Responsive: show only 3 recent customers on small screens if not searching
-  const isSearching = searchQuery.trim().length > 0
-  const [isSmall, setIsSmall] = useState(false)
-  useEffect(() => {
-    const checkScreen = () => setIsSmall(window.innerWidth < 768)
-    checkScreen()
-    window.addEventListener("resize", checkScreen)
-    return () => window.removeEventListener("resize", checkScreen)
-  }, [])
-
-  const customersToShow =
-    isSmall && !isSearching
-      ? filteredCustomers.slice(0, 3)
-      : filteredCustomers
 
   // Get customer initials for avatar
   const getInitials = (name: string) => {
+    if (!name) return "NA"
     return name
       .split(" ")
       .map((n) => n[0])
@@ -61,7 +53,7 @@ export function CustomerSidebar({ customers, selectedCustomerId, onSelectCustome
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-r">
+      <div className="p-4">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -75,20 +67,20 @@ export function CustomerSidebar({ customers, selectedCustomerId, onSelectCustome
       </div>
 
       {customers.length === 0 ? (
-        <div className="flex-1 flex flex-col border-r items-center justify-center p-4">
+        <div className="flex-1 flex flex-col items-center justify-center p-4">
           <p className="text-sm text-muted-foreground text-center mb-4">No customers found</p>
           <Button variant="outline" size="sm" onClick={() => router.push("/customers/new")}>
             Add Your First Customer
           </Button>
         </div>
-      ) : customersToShow.length === 0 ? (
+      ) : filteredCustomers.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-4">
           <p className="text-sm text-muted-foreground text-center">No customers match your search</p>
         </div>
       ) : (
         <ScrollArea className="flex-1">
           <div className="px-2 py-2">
-            {customersToShow.map((customer) => (
+            {filteredCustomers.map((customer) => (
               <button
                 key={customer._id}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left mb-1 ${
@@ -100,17 +92,26 @@ export function CustomerSidebar({ customers, selectedCustomerId, onSelectCustome
                   <AvatarImage src={customer.imageUrl || "/placeholder.svg"} alt={customer.name} />
                   <AvatarFallback>{getInitials(customer.name)}</AvatarFallback>
                 </Avatar>
-                <div className="overflow-hidden">
+                <div className="overflow-hidden flex-1">
                   <div className="font-medium truncate">{customer.name}</div>
                   <div className="text-xs text-muted-foreground truncate">{customer.phone}</div>
                 </div>
+                {customerBalances[customer._id] !== undefined && (
+                  <div
+                    className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                      customerBalances[customer._id] < 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    ₹{Math.abs(customerBalances[customer._id]).toFixed(2)}
+                  </div>
+                )}
               </button>
             ))}
           </div>
         </ScrollArea>
       )}
 
-      <div className="p-4 border-t border-r max-sm:hidden">
+      <div className="p-4 border-t">
         <Button variant="outline" className="w-full" onClick={() => router.push("/customers/new")}>
           Add New Customer
         </Button>

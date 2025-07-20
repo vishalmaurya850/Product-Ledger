@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CustomerSidebar } from "@/components/ledger/customer-sidebar"
 import { LedgerTable } from "@/components/ledger/ledger-table"
-import { getCurrentUserPermissions } from "@/lib/actions";
-// import { InlineCreditSettings } from "@/components/ledger/credit-limit-settings"
+import { InlineCreditSettings } from "@/components/ledger/credit-limit-settings"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
@@ -20,29 +19,16 @@ export function CustomerLedgerView() {
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [, setCreditSettings] = useState({
+  const [creditSettings, setCreditSettings] = useState({
     creditLimit: 10000,
     gracePeriod: 30,
     interestRate: 18,
   })
-  const [userPermissions, setUserPermissions] = useState<string[]>([]);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [, setLoadingSettings] = useState(false)
-
-
-  useEffect(() => {
-    async function fetchPermissions() {
-      // @ts-ignore
-      const { role, permissions } = await getCurrentUserPermissions();
-      setUserRole(role);
-      setUserPermissions(permissions);
-    }
-    fetchPermissions();
-  }, []);
+  const [loadingSettings, setLoadingSettings] = useState(false)
+  const [customerBalances, setCustomerBalances] = useState<Record<string, number>>({})
 
   // Fetch all customers
   useEffect(() => {
-    
     async function fetchCustomers() {
       try {
         setIsLoading(true)
@@ -68,6 +54,9 @@ export function CustomerLedgerView() {
         if (Array.isArray(data)) {
           setCustomers(data)
           console.log(`Loaded ${data.length} customers for ledger view`)
+
+          // Fetch balances for all customers
+          fetchCustomerBalances(data)
 
           // If customerId is in URL, select that customer
           if (customerId && data.length > 0) {
@@ -100,6 +89,30 @@ export function CustomerLedgerView() {
 
     fetchCustomers()
   }, [customerId, refreshTrigger])
+
+  // Fetch balances for all customers
+  const fetchCustomerBalances = async (customers: any[]) => {
+    try {
+      const balances: Record<string, number> = {}
+
+      // Fetch balances for each customer
+      const promises = customers.map(async (customer) => {
+        const response = await fetch(`/api/ledger/customer/${customer._id}/balance`, {
+          cache: "no-store",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          balances[customer._id] = data.balance
+        }
+      })
+
+      await Promise.all(promises)
+      setCustomerBalances(balances)
+    } catch (error) {
+      console.error("Error fetching customer balances:", error)
+    }
+  }
 
   // Fetch credit settings for a customer
   const fetchCreditSettings = async (id: string) => {
@@ -167,10 +180,10 @@ export function CustomerLedgerView() {
   }
 
   // Handle credit settings update
-  // const handleCreditSettingsUpdate = (updatedSettings: any) => {
-  //   setCreditSettings(updatedSettings)
-  //   setRefreshTrigger((prev) => prev + 1)
-  // }
+  const handleCreditSettingsUpdate = (updatedSettings: any) => {
+    setCreditSettings(updatedSettings)
+    setRefreshTrigger((prev) => prev + 1)
+  }
 
   if (isLoading) {
     return (
@@ -211,6 +224,7 @@ export function CustomerLedgerView() {
           selectedCustomerId={selectedCustomer?._id}
           onSelectCustomer={handleSelectCustomer}
           isLoading={isLoading}
+          customerBalances={customerBalances}
         />
       </div>
 
@@ -220,7 +234,21 @@ export function CustomerLedgerView() {
           <>
             <div className="p-4 border-b flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h1 className="text-2xl font-bold">{selectedCustomer.name}'s Ledger</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold">{selectedCustomer.name}'s Ledger</h1>
+                  {customerBalances[selectedCustomer._id] !== undefined && (
+                    <span
+                      className={`text-sm font-medium px-2 py-1 rounded-md ${
+                        customerBalances[selectedCustomer._id] < 0
+                          ? "bg-green-50 text-green-700"
+                          : "bg-red-50 text-red-700"
+                      }`}
+                    >
+                      Balance: ₹{Math.abs(customerBalances[selectedCustomer._id]).toFixed(2)}
+                      {customerBalances[selectedCustomer._id] < 0 ? " (Profit)" : " (Loss)"}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">Manage transactions and track balances</p>
               </div>
               <div className="flex gap-2">
@@ -235,7 +263,7 @@ export function CustomerLedgerView() {
               </div>
             </div>
 
-            {/* <div className="p-4 border-b bg-muted/30">
+            <div className="p-4 border-b bg-muted/30">
               {loadingSettings ? (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -248,10 +276,14 @@ export function CustomerLedgerView() {
                   onSettingsUpdate={handleCreditSettingsUpdate}
                 />
               )}
-            </div> */}
+            </div>
 
             <div className="flex-1 overflow-auto p-4">
-              <LedgerTable customerId={selectedCustomer._id} userPermissions={userPermissions} key={`ledger-${selectedCustomer._id}-${refreshTrigger}`} />
+              <LedgerTable
+                customerId={selectedCustomer._id}
+                userPermissions={["ledger_view", "ledger_edit", "ledger_delete", "ledger_create"]}
+                key={`ledger-${selectedCustomer._id}-${refreshTrigger}`}
+              />
             </div>
           </>
         ) : (
