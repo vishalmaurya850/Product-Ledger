@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
 
   // Public paths that don't require authentication
   const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"]
-  if (publicPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+  if (publicPaths.includes(pathname) || publicPaths.some((path) => pathname.startsWith(`${path}/`))) {
     return NextResponse.next()
   }
 
