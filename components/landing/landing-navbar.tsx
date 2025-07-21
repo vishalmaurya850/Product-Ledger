@@ -25,7 +25,7 @@ export function LandingNavbar() {
         isScrolled ? "bg-background/95 backdrop-blur-sm shadow-sm" : "bg-transparent"
       }`}
     >
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-16 items-center justify-between mx-auto">
         <div className="flex items-center gap-2">
           <Package className="h-6 w-6 text-primary" />
           <span className="text-lg font-bold">Product Ledger</span>
