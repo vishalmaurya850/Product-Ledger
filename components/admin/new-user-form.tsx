@@ -9,12 +9,20 @@ import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/components/ui/use-toast"
 import { createUser } from "@/lib/actions"
-import { availablePermissions } from "@/lib/permissions" // Import from permissions.ts instead of db.ts
+import { availablePermissions } from "@/lib/permissions"
 
 const formSchema = z
   .object({
@@ -40,6 +48,9 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -63,7 +74,6 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
       formData.append("role", values.role)
       formData.append("companyId", companyId)
 
-      // Add each permission
       values.permissions.forEach((permission) => {
         formData.append("permissions", permission)
       })
@@ -91,7 +101,6 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
     }
   }
 
-  // Group permissions by module
   const permissionsByModule: Record<string, typeof availablePermissions> = {}
   availablePermissions.forEach((permission) => {
     if (!permissionsByModule[permission.module]) {
@@ -140,7 +149,20 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Enter password" {...field} />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter password"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-600"
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -153,7 +175,20 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
               <FormItem>
                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Confirm password" {...field} />
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm password"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-600"
+                    >
+                      {showConfirmPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -177,13 +212,17 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
                     <FormControl>
                       <RadioGroupItem value="admin" />
                     </FormControl>
-                    <FormLabel className="font-normal">Admin (Full access to all features)</FormLabel>
+                    <FormLabel className="font-normal">
+                      Admin (Full access to all features)
+                    </FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center space-x-3 space-y-0">
                     <FormControl>
                       <RadioGroupItem value="user" />
                     </FormControl>
-                    <FormLabel className="font-normal">User (Limited access based on permissions)</FormLabel>
+                    <FormLabel className="font-normal">
+                      User (Limited access based on permissions)
+                    </FormLabel>
                   </FormItem>
                 </RadioGroup>
               </FormControl>
@@ -198,7 +237,9 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
           render={() => (
             <FormItem>
               <FormLabel>Permissions</FormLabel>
-              <FormDescription>Select the permissions this user should have</FormDescription>
+              <FormDescription>
+                Select the permissions this user should have
+              </FormDescription>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
                 {Object.entries(permissionsByModule).map(([module, modulePermissions]) => (
                   <div key={module} className="border rounded-md p-4">
@@ -210,7 +251,7 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
                           control={form.control}
                           name="permissions"
                           render={({ field }) => (
-                            <FormItem key={permission.name} className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                               <FormControl>
                                 <Checkbox
                                   checked={field.value?.includes(permission.name)}
