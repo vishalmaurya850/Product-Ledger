@@ -19,6 +19,10 @@ export function LandingNavbar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+   const handleLogoClick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-200 ${
@@ -26,7 +30,9 @@ export function LandingNavbar() {
       }`}
     >
       <div className="container flex h-16 items-center justify-between mx-auto">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer"
+             onClick={handleLogoClick}
+        >
           <Package className="h-6 w-6 text-primary" />
           <span className="text-lg font-bold">Product Ledger</span>
         </div>
