@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
+import { connectToDatabase, collections, logStatusChange } from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { ObjectId } from "mongodb"
@@ -42,19 +42,40 @@ export async function POST(request: Request) {
 
     const newPaidAmount = currentPaidAmount + settlementAmount
     const isFullyPaid = newPaidAmount >= originalEntry.amount
+    const oldStatus = originalEntry.status
 
-    // Update the original entry
+    // Get customer credit settings for credit limit restoration
+    const customerSettings = await db.collection(collections.customerSettings).findOne({
+      customerId: originalEntry.customerId,
+      companyId,
+    })
+
+    const defaultSettings = {
+      creditLimit: 10000,
+      gracePeriod: 30,
+      interestRate: 18,
+    }
+
+    const settings = customerSettings || defaultSettings
+
+    // Update the original entry with enhanced payment tracking
     const updateData: any = {
       paidAmount: newPaidAmount,
       status: isFullyPaid ? "Paid" : "Partially Paid",
       updatedAt: new Date(),
+      daysElapsed: 0, // Reset days elapsed when paid
+      accruedInterest: 0, // Reset accrued interest when paid
     }
 
     if (isFullyPaid) {
-      updateData.settledAt = new Date()
+      updateData.paidDate = new Date()
+      updateData.overdueStartDate = null // Clear overdue start date
     }
 
-    await db.collection(collections.ledger).updateOne({ _id: new ObjectId(entryId) }, { $set: updateData })
+    await db.collection(collections.ledger).updateOne(
+      { _id: new ObjectId(entryId) }, 
+      { $set: updateData }
+    )
 
     // Create payment entry
     const paymentEntry = {
@@ -63,53 +84,81 @@ export async function POST(request: Request) {
       customerId: originalEntry.customerId,
       type: "Payment In",
       amount: settlementAmount,
-      description: `Payment for ${originalEntry.description} (Invoice: ${entryId})`,
+      description: `Payment for ${originalEntry.description} (Invoice: ${originalEntry.invoiceNumber || entryId})`,
       status: "Paid",
       paymentMethod,
       relatedEntryId: entryId,
+      date: new Date(),
+      paidDate: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
     }
 
     await db.collection(collections.ledger).insertOne(paymentEntry)
 
-    // Update customer credit limit based on payment behavior
-    const customer = await db.collection(collections.customers).findOne({
-      _id: new ObjectId(originalEntry.customerId),
-      companyId,
-    })
-
-    if (customer && customer.creditSettings) {
-      let creditIncrease = 0
-      const currentLimit = customer.creditSettings.creditLimit
-
-      // Determine credit increase based on payment behavior
-      if (isFullyPaid) {
-        if (originalEntry.status === "Overdue") {
-          // Overdue payment settled - moderate increase
-          creditIncrease = currentLimit * 0.02 // 2% increase
-        } else {
-          // On-time payment - good increase
-          creditIncrease = currentLimit * 0.05 // 5% increase
-        }
-      } else {
-        // Partial payment - small increase
-        creditIncrease = currentLimit * 0.01 // 1% increase
-      }
-
-      if (creditIncrease > 0) {
-        const newCreditLimit = currentLimit + creditIncrease
-
-        await db.collection(collections.customers).updateOne(
-          { _id: new ObjectId(originalEntry.customerId) },
+    // Handle credit limit restoration on full payment
+    let creditLimitChange = 0
+    if (isFullyPaid) {
+      // Restore credit limit to original value if stored, or increase based on payment behavior
+      if (originalEntry.originalCreditLimit && originalEntry.originalCreditLimit > settings.creditLimit) {
+        // Restore to original credit limit before the transaction
+        creditLimitChange = originalEntry.originalCreditLimit - settings.creditLimit
+        
+        await db.collection(collections.customerSettings).updateOne(
+          { customerId: originalEntry.customerId, companyId },
           {
             $set: {
-              "creditSettings.creditLimit": Number.parseFloat(newCreditLimit.toFixed(2)),
+              creditLimit: originalEntry.originalCreditLimit,
               updatedAt: new Date(),
             },
           },
+          { upsert: true }
         )
+      } else {
+        // Apply credit increase based on payment behavior
+        const currentLimit = settings.creditLimit
+        let creditIncrease = 0
+
+        if (oldStatus === "Overdue") {
+          // Overdue payment settled - moderate increase
+          creditIncrease = currentLimit * 0.02 // 2% increase
+        } else {
+          // On-time payment - good increase  
+          creditIncrease = currentLimit * 0.05 // 5% increase
+        }
+
+        if (creditIncrease > 0) {
+          const newCreditLimit = currentLimit + creditIncrease
+          creditLimitChange = creditIncrease
+
+          await db.collection(collections.customerSettings).updateOne(
+            { customerId: originalEntry.customerId, companyId },
+            {
+              $set: {
+                creditLimit: Number.parseFloat(newCreditLimit.toFixed(2)),
+                updatedAt: new Date(),
+              },
+            },
+            { upsert: true }
+          )
+        }
       }
+    }
+
+    // Log status change
+    if (isFullyPaid) {
+      await logStatusChange(
+        db,
+        new ObjectId(entryId),
+        originalEntry.customerId,
+        oldStatus,
+        "Paid",
+        `Full payment of ₹${settlementAmount} via ${paymentMethod}`,
+        companyId,
+        session.user.id,
+        0, // No interest when paid
+        creditLimitChange
+      )
     }
 
     return NextResponse.json({
@@ -118,6 +167,8 @@ export async function POST(request: Request) {
       settlementAmount,
       remainingAmount: originalEntry.amount - newPaidAmount,
       isFullyPaid,
+      creditLimitChange,
+      newStatus: isFullyPaid ? "Paid" : "Partially Paid",
     })
   } catch (error) {
     console.error("Failed to settle payment:", error)
