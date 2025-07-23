@@ -189,7 +189,7 @@ export default function OverduePage() {
   const createTestData = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch("/api/test/create-overdue", {
+      const response = await fetch("/api/test/create-credit-test-data", {
         method: "POST",
       })
 
@@ -199,8 +199,8 @@ export default function OverduePage() {
 
       const data = await response.json()
       toast({
-        title: "Test data created",
-        description: data.message,
+        title: "Credit test data created",
+        description: `${data.message}. Created ${data.entriesCreated} entries for testing.`,
       })
 
       // Refresh the entries list
@@ -223,7 +223,7 @@ export default function OverduePage() {
         <h2 className="text-3xl font-bold tracking-tight">Overdue Payments</h2>
         <div className="flex items-center space-x-2">
           <Button variant="outline" onClick={createTestData} disabled={isLoading}>
-            Create Test Data
+            Create Credit Test Data
           </Button>
           <Button 
             variant="outline" 

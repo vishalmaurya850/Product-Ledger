@@ -2,11 +2,10 @@ import { NextResponse } from "next/server"
 import { connectToDatabase, collections, logStatusChange, updateEntryStatus, calculateInterest, calculateDaysOverdue } from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
 
 export const dynamic = "force-dynamic"
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions)
 

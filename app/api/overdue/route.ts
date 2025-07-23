@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic" // Disable caching
 
 
 interface LedgerEntry {
-  _id: string | Object; // Adjust based on your database schema
+  _id: string | object; // Adjust based on your database schema
   dueDate: string | Date;
   status: string;
   amount: number;

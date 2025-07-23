@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     const settings = customerSettings || defaultSettings
 
     // Update the original entry with enhanced payment tracking
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       paidAmount: newPaidAmount,
       status: isFullyPaid ? "Paid" : "Partially Paid",
       updatedAt: new Date(),
