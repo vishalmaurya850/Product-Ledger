@@ -48,6 +48,7 @@
     "cmdk": "1.0.4",
     "date-fns": "latest",
     "embla-carousel-react": "8.5.1",
+    "framer-motion": "^12.23.6",
     "gcp-metadata": "latest",
     "idb": "^8.0.3",
     "input-otp": "1.4.1",
