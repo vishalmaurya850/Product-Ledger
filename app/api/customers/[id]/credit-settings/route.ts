@@ -84,35 +84,36 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // const { db } = await connectToDatabase()
+    const { db } = await connectToDatabase()
 
-    // Update or create credit settings
-    // const result = await db.collection(collections.customerSettings).updateOne(
-    //   {
-    //     customerId: customerObjectId,
-    //     companyId,
-    //   },
-    //   {
-    //     $set: {
-    //       creditLimit: Number(body.creditLimit),
-    //       gracePeriod: Number(body.gracePeriod),
-    //       interestRate: Number(body.interestRate),
-    //       updatedAt: new Date(),
-    //     },
-    //     $setOnInsert: {
-    //       customerId: customerObjectId,
-    //       companyId,
-    //       createdAt: new Date(),
-    //     },
-    //   },
-    //   { upsert: true },
-    // )
+    const result = await db.collection(collections.customerSettings).updateOne(
+      {
+        customerId: customerObjectId,
+        companyId,
+      },
+      {
+        $set: {
+          creditLimit: Number(body.creditLimit),
+          gracePeriod: Number(body.gracePeriod),
+          interestRate: Number(body.interestRate),
+          fineAmount: Number(body.fineAmount),
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          customerId: customerObjectId,
+          companyId,
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true },
+    )
 
     // Return updated settings
     return NextResponse.json({
       creditLimit: Number(body.creditLimit),
       gracePeriod: Number(body.gracePeriod),
       interestRate: Number(body.interestRate),
+      fineAmount: Number(body.fineAmount),
     })
   } catch (error) {
     console.error("Failed to update customer credit settings:", error)
