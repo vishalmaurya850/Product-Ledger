@@ -3,6 +3,7 @@ import { connectToDatabase, collections, logStatusChange } from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { ObjectId } from "mongodb"
+import { handlePaymentCompletion, getCustomerFinancialStatus } from "@/lib/payment-completion"
 
 export async function POST(request: Request) {
   try {
@@ -44,37 +45,36 @@ export async function POST(request: Request) {
     const isFullyPaid = newPaidAmount >= originalEntry.amount
     const oldStatus = originalEntry.status
 
-    // Get customer credit settings for credit limit restoration
-    const customerSettings = await db.collection(collections.customerSettings).findOne({
-      customerId: originalEntry.customerId,
-      companyId,
-    })
-
-    const defaultSettings = {
-      creditLimit: 10000,
-      gracePeriod: 30,
-      interestRate: 18,
+    // Store original credit limit in the ledger entry if not already stored
+    if (!originalEntry.originalCreditLimit) {
+      const customerSettings = await db.collection(collections.customerSettings).findOne({
+        customerId: originalEntry.customerId,
+        companyId,
+      })
+      
+      const originalCreditLimit = customerSettings?.creditLimit || 10000
+      
+      await db.collection(collections.ledger).updateOne(
+        { _id: new ObjectId(entryId) },
+        {
+          $set: {
+            originalCreditLimit: originalCreditLimit
+          }
+        }
+      )
     }
 
-    const settings = customerSettings || defaultSettings
-
-    // Update the original entry with enhanced payment tracking
-    const updateData: Record<string, unknown> = {
-      paidAmount: newPaidAmount,
-      status: isFullyPaid ? "Paid" : "Partially Paid",
-      updatedAt: new Date(),
-      daysElapsed: 0, // Reset days elapsed when paid
-      accruedInterest: 0, // Reset accrued interest when paid
-    }
-
-    if (isFullyPaid) {
-      updateData.paidDate = new Date()
-      updateData.overdueStartDate = null // Clear overdue start date
-    }
-
+    // Update the entry with payment
     await db.collection(collections.ledger).updateOne(
       { _id: new ObjectId(entryId) }, 
-      { $set: updateData }
+      { 
+        $set: {
+          paidAmount: newPaidAmount,
+          status: isFullyPaid ? "Paid" : "Partially Paid",
+          updatedAt: new Date(),
+          ...(isFullyPaid && { paidDate: new Date() })
+        }
+      }
     )
 
     // Create payment entry
@@ -96,79 +96,38 @@ export async function POST(request: Request) {
 
     await db.collection(collections.ledger).insertOne(paymentEntry)
 
-    // Handle credit limit restoration on full payment
-    let creditLimitChange = 0
+    // Handle payment completion if fully paid
+    let paymentCompletionResult = null
     if (isFullyPaid) {
-      // Restore credit limit to original value if stored, or increase based on payment behavior
-      if (originalEntry.originalCreditLimit && originalEntry.originalCreditLimit > settings.creditLimit) {
-        // Restore to original credit limit before the transaction
-        creditLimitChange = originalEntry.originalCreditLimit - settings.creditLimit
-        
-        await db.collection(collections.customerSettings).updateOne(
-          { customerId: originalEntry.customerId, companyId },
-          {
-            $set: {
-              creditLimit: originalEntry.originalCreditLimit,
-              updatedAt: new Date(),
-            },
-          },
-          { upsert: true }
-        )
-      } else {
-        // Apply credit increase based on payment behavior
-        const currentLimit = settings.creditLimit
-        let creditIncrease = 0
-
-        if (oldStatus === "Overdue") {
-          // Overdue payment settled - moderate increase
-          creditIncrease = currentLimit * 0.02 // 2% increase
-        } else {
-          // On-time payment - good increase  
-          creditIncrease = currentLimit * 0.05 // 5% increase
-        }
-
-        if (creditIncrease > 0) {
-          const newCreditLimit = currentLimit + creditIncrease
-          creditLimitChange = creditIncrease
-
-          await db.collection(collections.customerSettings).updateOne(
-            { customerId: originalEntry.customerId, companyId },
-            {
-              $set: {
-                creditLimit: Number.parseFloat(newCreditLimit.toFixed(2)),
-                updatedAt: new Date(),
-              },
-            },
-            { upsert: true }
-          )
-        }
-      }
-    }
-
-    // Log status change
-    if (isFullyPaid) {
-      await logStatusChange(
-        db,
-        new ObjectId(entryId),
+      paymentCompletionResult = await handlePaymentCompletion(
         originalEntry.customerId,
-        oldStatus,
-        "Paid",
-        `Full payment of ₹${settlementAmount} via ${paymentMethod}`,
         companyId,
-        session.user.id,
-        0, // No interest when paid
-        creditLimitChange
+        entryId,
+        settlementAmount,
+        session.user.id
       )
     }
 
+    // Get updated customer financial status
+    const customerStatus = await getCustomerFinancialStatus(
+      originalEntry.customerId,
+      companyId
+    )
+
     return NextResponse.json({
       success: true,
-      message: "Payment settled successfully",
+      message: isFullyPaid ? "Payment completed successfully - Outstanding balance reset to ₹0" : "Payment settled successfully",
       settlementAmount,
       remainingAmount: originalEntry.amount - newPaidAmount,
       isFullyPaid,
-      creditLimitChange,
       newStatus: isFullyPaid ? "Paid" : "Partially Paid",
+      paymentCompletion: paymentCompletionResult,
+      customerFinancialStatus: {
+        totalOutstanding: customerStatus.totalOutstanding,
+        creditLimit: customerStatus.creditLimit,
+        availableCredit: customerStatus.availableCredit,
+        creditUsed: customerStatus.creditUsed
+      }
     })
   } catch (error) {
     console.error("Failed to settle payment:", error)

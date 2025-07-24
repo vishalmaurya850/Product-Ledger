@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections, logStatusChange, updateEntryStatus, calculateInterest, calculateDaysOverdue } from "@/lib/db"
+import { connectToDatabase, collections, logStatusChange } from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { ObjectId } from "mongodb"
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +14,7 @@ export async function POST() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const companyId = session.user.companyId
+    const companyId = session.user.companyId || session.user.id
     const { db } = await connectToDatabase()
 
     // Get company overdue settings
@@ -22,15 +23,17 @@ export async function POST() {
       interestRate: 18,
     }
 
-    // Find all unpaid and overdue entries that may need status updates
+    // Find all unpaid "Sell" entries that may need status updates (using entry date logic)
     const entriesToUpdate = await db.collection(collections.ledger).find({
       companyId,
+      type: "Sell",
       status: { $in: ["Unpaid", "Overdue"] },
-      dueDate: { $exists: true, $ne: null }
+      date: { $exists: true, $ne: null }
     }).toArray()
 
     let updatedCount = 0
     const updateResults = []
+    const today = new Date()
 
     for (const entry of entriesToUpdate) {
       const oldStatus = entry.status
@@ -44,53 +47,74 @@ export async function POST() {
       const gracePeriod = customerSettings?.gracePeriod || overdueSettings.gracePeriod
       const interestRate = customerSettings?.interestRate || overdueSettings.interestRate
 
-      // Calculate updated status and metrics
-      const statusUpdate = updateEntryStatus({
-        ...entry,
-        dueDate: new Date(entry.dueDate)
-      }, gracePeriod)
+      // Calculate days since entry date
+      const entryDate = new Date(entry.date)
+      const daysElapsed = Math.floor((today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      let newStatus = oldStatus
+      let accruedInterest = entry.accruedInterest || 0
+      let overdueStartDate = entry.overdueStartDate || null
 
-      // Apply interest rate from settings
-      const daysOverdue = calculateDaysOverdue(new Date(entry.dueDate), gracePeriod)
-      const accruedInterest = calculateInterest(entry.amount, daysOverdue, interestRate)
-      statusUpdate.accruedInterest = accruedInterest
+      // Determine new status based on days elapsed
+      if (daysElapsed > gracePeriod && oldStatus === "Unpaid") {
+        // Transition from Unpaid to Overdue
+        newStatus = "Overdue"
+        
+        // Set overdue start date (grace period end date)
+        if (!overdueStartDate) {
+          overdueStartDate = new Date(entryDate)
+          overdueStartDate.setDate(overdueStartDate.getDate() + gracePeriod)
+        }
+      }
 
-      // Check if status actually changed or if we need to update metrics
-      const needsUpdate = oldStatus !== statusUpdate.status || 
-                         entry.daysElapsed !== statusUpdate.daysElapsed ||
-                         (entry.accruedInterest || 0) !== statusUpdate.accruedInterest ||
-                         (statusUpdate.status === "Overdue" && !entry.overdueStartDate)
+      // Calculate interest for overdue entries
+      if (newStatus === "Overdue" && overdueStartDate) {
+        const daysOverdue = Math.floor((today.getTime() - overdueStartDate.getTime()) / (1000 * 60 * 60 * 24))
+        if (daysOverdue > 0) {
+          const dailyRate = interestRate / 365 / 100
+          accruedInterest = entry.amount * dailyRate * daysOverdue
+        }
+      }
+
+      // Check if update is needed
+      const needsUpdate = 
+        oldStatus !== newStatus || 
+        entry.daysElapsed !== daysElapsed ||
+        Math.abs((entry.accruedInterest || 0) - accruedInterest) > 0.01 ||
+        (!entry.overdueStartDate && overdueStartDate)
 
       if (needsUpdate) {
-        // Update the entry
-        const updateData = {
-          status: statusUpdate.status,
-          daysElapsed: statusUpdate.daysElapsed,
-          accruedInterest: statusUpdate.accruedInterest,
+        // Prepare update data
+        const updateData: any = {
+          status: newStatus,
+          daysElapsed,
+          accruedInterest: Number(accruedInterest.toFixed(2)),
           updatedAt: new Date(),
         }
 
-        if (statusUpdate.overdueStartDate && !entry.overdueStartDate) {
-          updateData.overdueStartDate = statusUpdate.overdueStartDate
+        // Add overdue start date if transitioning to overdue
+        if (overdueStartDate && !entry.overdueStartDate) {
+          updateData.overdueStartDate = overdueStartDate
         }
 
+        // Update the entry in database
         await db.collection(collections.ledger).updateOne(
           { _id: entry._id },
           { $set: updateData }
         )
 
         // Log status change if status actually changed
-        if (oldStatus !== statusUpdate.status) {
+        if (oldStatus !== newStatus) {
           await logStatusChange(
             db,
             entry._id,
             entry.customerId,
             oldStatus,
-            statusUpdate.status,
-            `Automatic status update: ${statusUpdate.daysElapsed} days elapsed, ${daysOverdue} days overdue`,
+            newStatus,
+            `Automatic status transition: ${daysElapsed} days elapsed, grace period: ${gracePeriod} days. Interest applied: ₹${accruedInterest.toFixed(2)}`,
             companyId,
             session.user.id,
-            statusUpdate.accruedInterest
+            accruedInterest
           )
         }
 
@@ -99,9 +123,12 @@ export async function POST() {
           entryId: entry._id.toString(),
           invoiceNumber: entry.invoiceNumber,
           oldStatus,
-          newStatus: statusUpdate.status,
-          daysElapsed: statusUpdate.daysElapsed,
-          accruedInterest: statusUpdate.accruedInterest
+          newStatus,
+          daysElapsed,
+          accruedInterest: Number(accruedInterest.toFixed(2)),
+          overdueStartDate,
+          gracePeriod,
+          interestRate
         })
       }
     }
@@ -129,7 +156,7 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const companyId = session.user.companyId
+    const companyId = session.user.companyId || session.user.id
     const { db } = await connectToDatabase()
 
     // Get company overdue settings
@@ -141,11 +168,13 @@ export async function GET() {
     // Find entries that may need updates
     const entriesToCheck = await db.collection(collections.ledger).find({
       companyId,
+      type: "Sell",
       status: { $in: ["Unpaid", "Overdue"] },
-      dueDate: { $exists: true, $ne: null }
+      date: { $exists: true, $ne: null }
     }).toArray()
 
     const pendingUpdates = []
+    const today = new Date()
     
     for (const entry of entriesToCheck) {
       const customerSettings = await db.collection(collections.customerSettings).findOne({
@@ -154,23 +183,46 @@ export async function GET() {
       })
 
       const gracePeriod = customerSettings?.gracePeriod || overdueSettings.gracePeriod
-      const statusUpdate = updateEntryStatus({
-        ...entry,
-        dueDate: new Date(entry.dueDate)
-      }, gracePeriod)
+      const interestRate = customerSettings?.interestRate || overdueSettings.interestRate
 
-      const needsUpdate = entry.status !== statusUpdate.status || 
-                         entry.daysElapsed !== statusUpdate.daysElapsed ||
-                         (entry.accruedInterest || 0) !== statusUpdate.accruedInterest
+      // Calculate days since entry date
+      const entryDate = new Date(entry.date)
+      const daysElapsed = Math.floor((today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      let suggestedStatus = entry.status
+      let suggestedInterest = entry.accruedInterest || 0
+
+      // Check if should be overdue
+      if (daysElapsed > gracePeriod && entry.status === "Unpaid") {
+        suggestedStatus = "Overdue"
+      }
+
+      // Calculate interest for overdue entries
+      if (suggestedStatus === "Overdue") {
+        const daysOverdue = Math.max(0, daysElapsed - gracePeriod)
+        if (daysOverdue > 0) {
+          const dailyRate = interestRate / 365 / 100
+          suggestedInterest = entry.amount * dailyRate * daysOverdue
+        }
+      }
+
+      const needsUpdate = 
+        entry.status !== suggestedStatus || 
+        entry.daysElapsed !== daysElapsed ||
+        Math.abs((entry.accruedInterest || 0) - suggestedInterest) > 0.01
 
       if (needsUpdate) {
         pendingUpdates.push({
           entryId: entry._id.toString(),
           invoiceNumber: entry.invoiceNumber,
           currentStatus: entry.status,
-          suggestedStatus: statusUpdate.status,
-          daysElapsed: statusUpdate.daysElapsed,
-          accruedInterest: statusUpdate.accruedInterest
+          suggestedStatus,
+          currentDaysElapsed: entry.daysElapsed || 0,
+          suggestedDaysElapsed: daysElapsed,
+          currentInterest: entry.accruedInterest || 0,
+          suggestedInterest: Number(suggestedInterest.toFixed(2)),
+          gracePeriod,
+          daysOverdue: Math.max(0, daysElapsed - gracePeriod)
         })
       }
     }

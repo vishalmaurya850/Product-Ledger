@@ -44,38 +44,28 @@ export async function GET(request: Request) {
 
     console.log("Overdue settings:", settings)
 
-    // Find all entries that are past due date and not paid for this company
+    // Find all "Sell" entries that are unpaid (matching dashboard logic)
     const today = new Date()
 
-    // Query for unpaid and overdue entries with due dates
+    // Query for unpaid "Sell" entries (using entry date logic, not due date)
     const query = {
       companyId,
-      dueDate: { $lt: today },
+      type: "Sell",
       status: { $ne: "Paid" },
     }
 
-    const overdueEntries = await db
+    const allUnpaidEntries = await db
       .collection(collections.ledger)
       .find(query)
-      .sort({ dueDate: 1 })
-      .limit(limit || 0)
+      .sort({ date: 1 })
       .toArray()
 
-    console.log("Overdue entries fetched:", overdueEntries.length)
+    console.log("All unpaid sell entries fetched:", allUnpaidEntries.length)
 
-    // Calculate enhanced metrics for each overdue entry
-    const entriesWithEnhancedData = await Promise.all(overdueEntries.map(async (entry: LedgerEntry) => {
-      if (!entry.dueDate) {
-        return {
-          ...entry,
-          daysElapsed: 0,
-          daysOverdue: 0,
-          interest: 0,
-          totalDue: entry.amount,
-          _id: entry._id.toString(),
-        }
-      }
-
+    // Filter and calculate for truly overdue entries (past grace period)
+    const overdueEntries = []
+    
+    for (const entry of allUnpaidEntries) {
       // Get customer-specific settings
       const customerSettings = await db.collection(collections.customerSettings).findOne({
         customerId: entry.customerId,
@@ -85,39 +75,41 @@ export async function GET(request: Request) {
       const customerGracePeriod = customerSettings?.gracePeriod || settings.gracePeriod
       const customerInterestRate = customerSettings?.interestRate || settings.interestRate
 
-      const dueDate = new Date(entry.dueDate)
-      const daysElapsed = calculateDaysElapsed(dueDate)
-      const daysOverdue = calculateDaysOverdue(dueDate, customerGracePeriod)
+      // Calculate days since entry date (matching dashboard and ledger logic)
+      const daysCount = Math.floor((today.getTime() - new Date(entry.date).getTime()) / (1000 * 60 * 60 * 24))
       
-      // Calculate interest only if actually overdue (past grace period)
-      let interest = 0
-      if (daysOverdue > 0) {
-        interest = calculateInterest(entry.amount, daysOverdue, customerInterestRate)
-        // Apply minimum fee if configured
-        interest = Math.max(interest, settings.minimumFee || 0)
-      }
-
-      return {
-        ...entry,
-        daysElapsed,
-        daysOverdue,
-        interest,
-        totalDue: entry.amount + interest,
-        gracePeriod: customerGracePeriod,
-        interestRate: customerInterestRate,
-        overdueStartDate: daysOverdue > 0 && !entry.overdueStartDate ? 
-          (() => {
-            const start = new Date(dueDate)
+      // Only include if truly overdue (past grace period)
+      if (daysCount > customerGracePeriod) {
+        // Calculate interest for overdue days
+        const daysWithInterest = daysCount - customerGracePeriod
+        const dailyRate = customerInterestRate / 365 / 100
+        const interest = entry.amount * dailyRate * daysWithInterest
+        
+        overdueEntries.push({
+          ...entry,
+          daysElapsed: daysCount,
+          daysOverdue: daysWithInterest,
+          interest,
+          totalDue: entry.amount + interest - (entry.partialPaymentAmount || 0),
+          gracePeriod: customerGracePeriod,
+          interestRate: customerInterestRate,
+          dueDate: entry.dueDate || entry.date, // Use dueDate if available, otherwise use entry date
+          overdueStartDate: (() => {
+            const start = new Date(entry.date)
             start.setDate(start.getDate() + customerGracePeriod)
             return start
-          })() : entry.overdueStartDate,
-        _id: entry._id.toString(),
+          })(),
+          _id: entry._id.toString(),
+        })
       }
-    }))
+    }
+    
+    // Apply limit if specified
+    const limitedOverdueEntries = limit ? overdueEntries.slice(0, limit) : overdueEntries
 
-    console.log("Entries with enhanced data calculated:", entriesWithEnhancedData.length)
+    console.log("Filtered overdue entries:", limitedOverdueEntries.length)
 
-    return NextResponse.json(entriesWithEnhancedData)
+    return NextResponse.json(limitedOverdueEntries)
   } catch (error) {
     console.error("Failed to fetch overdue entries:", error)
     return NextResponse.json({ error: "Failed to fetch overdue entries" }, { status: 500 })

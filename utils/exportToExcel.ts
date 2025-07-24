@@ -1,8 +1,28 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
-export function exportToExcel(data: any[], fileName: string) {
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Reports");
-  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+export async function exportToExcel(data: any[], fileName: string) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Reports");
+
+  if (data.length > 0) {
+    // Get column headers from the first object
+    const headers = Object.keys(data[0]);
+    
+    // Add headers
+    worksheet.addRow(headers);
+    
+    // Add data rows
+    data.forEach(item => {
+      const row = headers.map(header => item[header]);
+      worksheet.addRow(row);
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      column.width = 15;
+    });
+  }
+
+  // Write to file
+  await workbook.xlsx.writeFile(`${fileName}.xlsx`);
 }

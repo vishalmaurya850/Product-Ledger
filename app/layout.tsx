@@ -8,6 +8,7 @@ import { SideNav } from "@/components/side-nav"
 import { TopNav } from "@/components/top-nav"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth-provider"
+import { AutoStatusUpdater } from "@/components/auto-status-updater"
 import { getCompanyName } from "@/lib/actions";
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -40,6 +41,7 @@ export default async function RootLayout({
                   <SideNav />
                   <main className="flex-1 overflow-auto">{children}</main>
                 </div>
+                <AutoStatusUpdater />
               </div>
             ) : (
               <main>{children}</main>
