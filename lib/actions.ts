@@ -89,6 +89,7 @@ export async function createLedgerEntry(formData: FormData) {
       date: Date
       description: string
       amount: number
+      currency: string
       status: string
       product?: string
       notes?: string
@@ -105,6 +106,7 @@ export async function createLedgerEntry(formData: FormData) {
       date: new Date(formData.get("date") as string),
       description: formData.get("description") as string,
       amount: Number.parseFloat(formData.get("amount") as string),
+      currency: (formData.get("currency") as string),
       status: formData.get("type") === "Sell" ? "Unpaid" : "Paid",
       product: (formData.get("product") as string) || undefined,
       notes: (formData.get("notes") as string) || undefined,
