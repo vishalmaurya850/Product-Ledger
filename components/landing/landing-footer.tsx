@@ -106,26 +106,17 @@ export function LandingFooter() {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link 
-                  href="#" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
+                <Link href="/policy" className="text-muted-foreground hover:text-foreground">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link 
-                  href="#" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
+                <Link href="/terms" className="text-muted-foreground hover:text-foreground">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link 
-                  href="#" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
+                <Link href="/cookie" className="text-muted-foreground hover:text-foreground">
                   Cookie Policy
                 </Link>
               </li>
