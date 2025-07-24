@@ -14,7 +14,11 @@ export async function POST() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const companyId = session.user.companyId || session.user.id
+    // Validate companyId to ensure it is a valid ObjectId string and belongs to the authenticated user
+    let companyId = session.user.companyId || session.user.id
+    if (!companyId || typeof companyId !== 'string' || !companyId.match(/^[a-fA-F0-9]{24}$/)) {
+      return NextResponse.json({ error: "Invalid company context" }, { status: 403 })
+    }
     const { db } = await connectToDatabase()
 
     // Get company overdue settings
