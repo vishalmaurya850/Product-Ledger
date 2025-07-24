@@ -129,11 +129,12 @@ export async function GET(request: Request) {
     const customerId = url.searchParams.get("customerId")
     const companyId = session.user.companyId
 
-    if (!customerId) {
-      return NextResponse.json({ error: "Customer ID required" }, { status: 400 })
+    if (!customerId || !/^[a-fA-F0-9]{24}$/.test(customerId)) {
+      return NextResponse.json({ error: "Valid Customer ID required" }, { status: 400 })
     }
 
     const status = await getCustomerFinancialStatus(customerId, companyId)
+
 
     return NextResponse.json({
       success: true,
