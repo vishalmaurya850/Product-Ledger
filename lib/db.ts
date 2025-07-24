@@ -60,6 +60,7 @@ export interface LedgerEntry {
   type: "Sell" | "Payment In" | "Payment Out" | "Partial Payment"
   invoiceNumber: string
   amount: number
+  currency: string
   date: Date
   product?: string
   description: string

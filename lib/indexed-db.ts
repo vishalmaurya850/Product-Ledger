@@ -62,6 +62,7 @@ interface ProductLedgerDB extends DBSchema {
       productId?: string
       type: "Sell" | "Buy" | "Payment In" | "Payment Out"
       amount: number
+      currency: string
       description: string
       status: "Pending" | "Paid" | "Overdue" | "Partially Paid"
       dueDate?: Date
