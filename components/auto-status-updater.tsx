@@ -33,7 +33,10 @@ export function AutoStatusUpdater() {
     } catch (error) {
       console.error('Auto-update error:', error)
     } finally {
-      setIsUpdating(false)
+      if (!window.location.reload) {
+        setIsUpdating(false)
+      }
+    }
     }
   }
 
