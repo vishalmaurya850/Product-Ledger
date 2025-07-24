@@ -106,7 +106,7 @@ const PrivacyPolicy: React.FC = () => {
           </p>
           <ul className="list-disc list-inside ml-4">
             <li>By email: support@productledger.com</li>
-            <li>By visiting this page on our website: [Your Contact Page URL]</li>
+            <li>By visiting this page on our website</li>
           </ul>
         </section>
 
