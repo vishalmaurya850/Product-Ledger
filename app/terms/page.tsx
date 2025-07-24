@@ -142,8 +142,8 @@ const TermsAndConditions: React.FC = () => {
             If you have any questions about these Terms & Conditions, please contact us:
           </p>
           <ul className="list-disc list-inside ml-6 text-gray-300 space-y-2">
-            <li>By email: <a href="mailto:support@productledger.com" className="text-blue-400 hover:underline">support@productledger.com</a></li>
-            <li>By visiting this page on our website: <Link href="/contact" className="text-blue-400 hover:underline">[Your Contact Page URL]</Link></li> {/* Assuming you have a contact page */}
+            <li>By email:  bonsoisystems@gmail.com<a href="mailto:support@productledger.com" className="text-blue-400 hover:underline">support@productledger.com</a></li>
+            <li>By visiting this page on our website:https://bonsoi.vercel.app </li> {/* Assuming you have a contact page */}
           </ul>
         </section>
 
