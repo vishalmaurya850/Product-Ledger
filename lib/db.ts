@@ -47,6 +47,7 @@ export const collections = {
   permissions: "permissions",
   companies: "companies",
   overdueSettings: "overdueSettings",
+  statusChangeLogs: "statusChangeLogs",
 }
 
 // Import permissions from separate file
@@ -61,11 +62,16 @@ export interface LedgerEntry {
   invoiceNumber: string
   amount: number
   date: Date
+  dueDate?: Date
   product?: string
   description: string
   status: "Paid" | "Unpaid" | "Overdue"
   paidDate?: Date
   daysCount?: number
+  daysElapsed?: number // Days since due date for unpaid/overdue
+  overdueStartDate?: Date // When the payment became overdue
+  accruedInterest?: number // Interest accumulated due to being overdue
+  originalCreditLimit?: number // Store original credit limit before transaction
   notes?: string
   createdAt: Date
   updatedAt: Date
@@ -169,6 +175,21 @@ export interface PasswordReset {
   createdAt: Date
 }
 
+// Status change log schema
+export interface StatusChangeLog {
+  _id?: ObjectId
+  entryId: ObjectId
+  customerId: ObjectId
+  oldStatus: "Paid" | "Unpaid" | "Overdue"
+  newStatus: "Paid" | "Unpaid" | "Overdue"
+  reason: string
+  interestApplied?: number
+  creditLimitChange?: number
+  companyId: string
+  createdAt: Date
+  createdBy: string
+}
+
 // Generate a 6-digit invoice number
 export function generateInvoiceNumber(): string {
   // Generate a random 6-digit number
@@ -176,21 +197,95 @@ export function generateInvoiceNumber(): string {
   return randomNum.toString()
 }
 
-// Calculate days overdue
-export function calculateDaysOverdue(date: Date, gracePeriod: number): number {
+// Calculate days elapsed since due date (for unpaid entries)
+export function calculateDaysElapsed(dueDate: Date): number {
+  const today = new Date()
+  const due = new Date(dueDate)
+  const daysDifference = Math.floor((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.max(0, daysDifference)
+}
+
+// Calculate days overdue (days past grace period)
+export function calculateDaysOverdue(dueDate: Date, gracePeriod: number): number {
+  const daysElapsed = calculateDaysElapsed(dueDate)
+  return Math.max(0, daysElapsed - gracePeriod)
+}
+
+// Calculate interest based on days overdue
+export function calculateInterest(amount: number, daysOverdue: number, interestRate: number): number {
+  if (daysOverdue <= 0) return 0
+  
+  const dailyRate = interestRate / 365 / 100
+  return amount * dailyRate * daysOverdue
+}
+
+// Check if a payment should be marked as overdue
+export function shouldBeOverdue(dueDate: Date, status: string, gracePeriod: number): boolean {
+  if (status === "Paid") return false
+  const daysElapsed = calculateDaysElapsed(dueDate)
+  return daysElapsed > gracePeriod
+}
+
+// Update entry status based on current date and grace period
+export function updateEntryStatus(entry: LedgerEntry, gracePeriod: number): {
+  status: "Paid" | "Unpaid" | "Overdue",
+  overdueStartDate?: Date,
+  daysElapsed: number,
+  accruedInterest: number
+} {
+  if (entry.status === "Paid") {
+    return {
+      status: "Paid",
+      daysElapsed: 0,
+      accruedInterest: 0
+    }
+  }
+
+  if (!entry.dueDate) {
+    return {
+      status: entry.status,
+      daysElapsed: 0,
+      accruedInterest: entry.accruedInterest || 0
+    }
+  }
+
+  const daysElapsed = calculateDaysElapsed(entry.dueDate)
+  const daysOverdue = calculateDaysOverdue(entry.dueDate, gracePeriod)
+  
+  if (daysOverdue > 0) {
+    // Should be overdue
+    const overdueStartDate = entry.overdueStartDate || (() => {
+      const start = new Date(entry.dueDate)
+      start.setDate(start.getDate() + gracePeriod)
+      return start
+    })()
+    
+    // Calculate interest from CustomerCreditSettings - will be passed as parameter
+    const accruedInterest = calculateInterest(entry.amount, daysOverdue, 18) // Default rate, should be passed from settings
+    
+    return {
+      status: "Overdue",
+      overdueStartDate,
+      daysElapsed,
+      accruedInterest
+    }
+  } else {
+    // Still unpaid but within grace period
+    return {
+      status: "Unpaid",
+      daysElapsed,
+      accruedInterest: 0
+    }
+  }
+}
+
+// Calculate days overdue (legacy - for backward compatibility)
+export function calculateDaysOldOverdue(date: Date, gracePeriod: number): number {
   const today = new Date()
   const creationDate = new Date(date)
   const daysDifference = Math.floor((today.getTime() - creationDate.getTime()) / (1000 * 60 * 60 * 24))
 
   return Math.max(0, daysDifference - gracePeriod)
-}
-
-// Calculate interest
-export function calculateInterest(amount: number, daysOverdue: number, interestRate: number): number {
-  if (daysOverdue <= 0) return 0
-
-  const dailyRate = interestRate / 365 / 100
-  return amount * dailyRate * daysOverdue
 }
 
 // Calculate days count (for paid entries, it's the days until payment)
@@ -201,21 +296,21 @@ export function calculateDaysCount(date: Date, paidDate?: Date): number {
   return Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
 }
 
-// Check if a ledger entry is overdue
+// Check if a ledger entry is overdue (legacy - for backward compatibility)
 export function isOverdue(date: Date, gracePeriod: number): boolean {
-  const daysOverdue = calculateDaysOverdue(date, gracePeriod)
+  const daysOverdue = calculateDaysOldOverdue(date, gracePeriod)
   return daysOverdue > 0
 }
 
-// Calculate balance for a ledger entry
+// Calculate balance for a ledger entry with enhanced overdue logic
 export function calculateBalance(entry: any, interestRate: number, gracePeriod: number): number {
   if (entry.status === "Paid") return 0
 
   // For partially paid entries, use the remaining amount
   const amount = entry.partiallyPaid ? entry.remainingAmount : entry.amount
 
-  if (entry.status === "Overdue") {
-    const daysOverdue = calculateDaysOverdue(entry.date, gracePeriod)
+  if (entry.status === "Overdue" && entry.dueDate) {
+    const daysOverdue = calculateDaysOverdue(entry.dueDate, gracePeriod)
     const interest = calculateInterest(amount, daysOverdue, interestRate)
     return amount + interest
   }
@@ -253,4 +348,38 @@ export function calculateCreditUsed(entries: any[]): number {
 export function calculateAvailableCredit(creditLimit: number, entries: any[]): number {
   const creditUsed = calculateCreditUsed(entries)
   return Math.max(0, creditLimit - creditUsed)
+}
+
+// Log status change for audit trail
+export async function logStatusChange(
+  db: any,
+  entryId: ObjectId,
+  customerId: ObjectId,
+  oldStatus: "Paid" | "Unpaid" | "Overdue",
+  newStatus: "Paid" | "Unpaid" | "Overdue",
+  reason: string,
+  companyId: string,
+  createdBy: string,
+  interestApplied?: number,
+  creditLimitChange?: number
+): Promise<void> {
+  const logEntry: StatusChangeLog = {
+    entryId,
+    customerId,
+    oldStatus,
+    newStatus,
+    reason,
+    interestApplied,
+    creditLimitChange,
+    companyId,
+    createdAt: new Date(),
+    createdBy
+  }
+
+  try {
+    await db.collection(collections.statusChangeLogs).insertOne(logEntry)
+  } catch (error) {
+    console.error("Failed to log status change:", error)
+    // Don't throw error to avoid disrupting main operation
+  }
 }

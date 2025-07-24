@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { connectToDatabase, collections } from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { ObjectId } from "mongodb"
 
 export const dynamic = "force-dynamic" // Disable caching for this route
 
@@ -60,25 +61,49 @@ export async function POST(request: Request) {
     const { db } = await connectToDatabase()
     const data = await request.json()
 
-    // Add timestamps and company ID
-    const entry = {
+    // Get customer credit settings to store original credit limit
+    let originalCreditLimit = null
+    if (data.type === "Sell" && data.customerId) {
+      const customerSettings = await db.collection(collections.customerSettings).findOne({
+        customerId: new ObjectId(data.customerId),
+        companyId,
+      })
+      if (customerSettings) {
+        originalCreditLimit = customerSettings.creditLimit
+      }
+    }
+
+    // Set due date if not provided - default to 30 days for sales
+    let dueDate = data.dueDate ? new Date(data.dueDate) : null
+    if (!dueDate && data.type === "Sell") {
+      const entryDate = new Date(data.date)
+      dueDate = new Date(entryDate)
+      dueDate.setDate(dueDate.getDate() + 30) // Default 30 days payment term
+    }
+
+    // Initialize new fields for enhanced tracking
+    const enhancedData = {
       ...data,
       date: new Date(data.date),
-      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      dueDate,
+      originalCreditLimit,
+      daysElapsed: 0,
+      accruedInterest: 0,
       companyId,
       createdAt: new Date(),
       updatedAt: new Date(),
+      createdBy: session.user.id,
     }
 
-    const result = await db.collection(collections.ledger).insertOne(entry)
+    const result = await db.collection(collections.ledger).insertOne(enhancedData)
 
     return NextResponse.json({
       success: true,
-      id: result.insertedId.toString(), // Convert ObjectId to string
+      id: result.insertedId.toString(),
       entry: {
-        ...entry,
+        ...enhancedData,
         _id: result.insertedId.toString(),
-        customerId: entry.customerId.toString(),
+        customerId: enhancedData.customerId.toString(),
       },
     })
   } catch (error) {

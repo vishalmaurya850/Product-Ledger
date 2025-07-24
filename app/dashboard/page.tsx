@@ -8,12 +8,23 @@ import { RecentSales } from "@/components/dashboard/recent-sales"
 import { OverdueWidget } from "@/components/dashboard/overdue-widget"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, Users, Package, AlertTriangle } from "lucide-react"
+import { autoUpdateStatuses } from "@/lib/auto-status-update"
 
 export default async function DashboardPage() {
   // Check if user is authenticated
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     redirect("/auth/login")
+  }
+
+  // Run automatic status updates when dashboard loads
+  try {
+    const autoUpdateResult = await autoUpdateStatuses()
+    if (autoUpdateResult.success && (autoUpdateResult.updatedCount || 0) > 0) {
+      console.log(`🔄 Dashboard Auto-Update: ${autoUpdateResult.updatedCount || 0} entries updated automatically`)
+    }
+  } catch (error) {
+    console.error("Auto-update on dashboard load failed:", error)
   }
 
   // Get company data
@@ -56,16 +67,54 @@ export default async function DashboardPage() {
 
   const totalOutstanding = outstandingResult.length > 0 ? outstandingResult[0].total : 0
 
-  // Get total overdue amount
-  const overdueResult = await db
+  // Get total overdue amount using ledger logic (days since entry date)
+  const overdueSettings = (await db.collection(collections.overdueSettings).findOne({ companyId })) || {
+    gracePeriod: 30,
+    interestRate: 18, // 18% annual interest rate
+    minimumFee: 5,
+  }
+
+  // Get all "Sell" entries that are unpaid (matching ledger logic)
+  const today = new Date()
+  const potentialOverdueEntries = await db
     .collection(collections.ledger)
-    .aggregate([{ $match: { companyId, status: "Overdue" } }, { $group: { _id: null, total: { $sum: "$amount" } } }])
+    .find({ 
+      companyId, 
+      type: "Sell",
+      status: { $ne: "Paid" } 
+    })
     .toArray()
 
-  const totalOverdue = overdueResult.length > 0 ? overdueResult[0].total : 0
+  let totalOverdue = 0
+  let overdueCount = 0
 
-  // Get overdue count
-  const overdueCount = await db.collection(collections.ledger).countDocuments({ companyId, status: "Overdue" })
+  // Calculate overdue using same logic as ledger table
+  for (const entry of potentialOverdueEntries) {
+    // Get customer-specific settings if available
+    const customerSettings = await db.collection(collections.customerSettings).findOne({
+      customerId: entry.customerId,
+      companyId,
+    })
+
+    const gracePeriod = customerSettings?.gracePeriod || overdueSettings.gracePeriod
+    const interestRate = customerSettings?.interestRate || overdueSettings.interestRate
+
+    // Calculate days since entry date (not due date)
+    const daysCount = Math.floor((today.getTime() - new Date(entry.date).getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Check if truly overdue (past grace period)
+    if (daysCount > gracePeriod) {
+      // Calculate interest for overdue days
+      const daysWithInterest = daysCount - gracePeriod
+      const dailyRate = interestRate / 365 / 100
+      const interest = entry.amount * dailyRate * daysWithInterest
+      
+      // Add to overdue amount (original amount + interest - any partial payments)
+      const entryOverdueAmount = entry.amount + interest - (entry.partialPaymentAmount || 0)
+      totalOverdue += entryOverdueAmount
+      overdueCount++
+    }
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
