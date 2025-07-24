@@ -23,27 +23,22 @@ export async function handlePaymentCompletion(
     const customerObjectId = typeof customerId === 'string' ? new ObjectId(customerId) : customerId
     const entryObjectId = typeof entryId === 'string' ? new ObjectId(entryId) : entryId
 
-    // Get the original entry being paid
     const originalEntry = await db.collection(collections.ledger).findOne({
       _id: entryObjectId,
       companyId,
     })
-
     if (!originalEntry) {
       throw new Error("Entry not found")
     }
 
-    // Get current customer settings
     const customerSettings = await db.collection(collections.customerSettings).findOne({
       customerId: customerObjectId,
       companyId,
     })
 
-    // Get original credit limit from the entry or current settings
     const originalCreditLimit = originalEntry.originalCreditLimit || customerSettings?.originalCreditLimit || customerSettings?.creditLimit || 10000
     const currentCreditLimit = customerSettings?.creditLimit || 10000
 
-    // Calculate if this payment fully settles the entry
     const currentPaidAmount = originalEntry.paidAmount || 0
     const newPaidAmount = currentPaidAmount + paymentAmount
     const isFullyPaid = newPaidAmount >= originalEntry.amount
@@ -53,25 +48,9 @@ export async function handlePaymentCompletion(
     let creditRestored = 0
 
     if (isFullyPaid) {
-      // Step 1: Reset outstanding balance for this entry to zero
-      await db.collection(collections.ledger).updateOne(
-        { _id: entryObjectId },
-        {
-          $set: {
-            status: "Paid",
-            paidAmount: originalEntry.amount, // Exact amount, no overpayment
-            paidDate: new Date(),
-            outstandingBalance: 0, // Explicitly reset to zero
-            updatedAt: new Date(),
-            daysElapsed: 0, // Reset days elapsed when paid
-            accruedInterest: 0, // Reset accrued interest when paid
-            overdueStartDate: null, // Clear overdue start date
-          }
-        }
-      )
+      await resetEntryBalance(db, entryObjectId, originalEntry)
       outstandingBalanceReset = true
 
-      // Step 2: Check if we need to restore credit limit for this customer
       const allCustomerEntries = await db.collection(collections.ledger).find({
         customerId: customerObjectId,
         companyId,
@@ -79,26 +58,10 @@ export async function handlePaymentCompletion(
         status: { $ne: "Paid" }
       }).toArray()
 
-      // If no more unpaid entries, restore full credit limit
       if (allCustomerEntries.length === 0) {
-        // Restore credit limit to original state
-        await db.collection(collections.customerSettings).updateOne(
-          { customerId: customerObjectId, companyId },
-          {
-            $set: {
-              creditLimit: originalCreditLimit,
-              creditUsed: 0, // Reset credit used to zero
-              availableCredit: originalCreditLimit, // Full credit available
-              updatedAt: new Date(),
-            }
-          },
-          { upsert: true }
-        )
-
+        await restoreFullCreditLimit(db, customerObjectId, companyId, originalCreditLimit)
         creditRestored = originalCreditLimit - currentCreditLimit
         creditLimitRestored = true
-
-        // Log the credit restoration
         await logStatusChange(
           db,
           entryObjectId,
@@ -108,29 +71,15 @@ export async function handlePaymentCompletion(
           `Payment completion: Outstanding balance reset to ₹0, Credit limit restored to ₹${originalCreditLimit.toFixed(2)}`,
           companyId,
           userId,
-          0, // No interest when paid
+          0,
           creditRestored
         )
       } else {
-        // Partial restoration: restore credit for this specific entry amount
         const entryAmount = originalEntry.amount
         const newCreditLimit = Math.min(currentCreditLimit + entryAmount, originalCreditLimit)
-        
-        await db.collection(collections.customerSettings).updateOne(
-          { customerId: customerObjectId, companyId },
-          {
-            $set: {
-              creditLimit: newCreditLimit,
-              updatedAt: new Date(),
-            }
-          },
-          { upsert: true }
-        )
-
+        await restorePartialCreditLimit(db, customerObjectId, companyId, newCreditLimit)
         creditRestored = newCreditLimit - currentCreditLimit
         creditLimitRestored = creditRestored > 0
-
-        // Log the partial credit restoration
         await logStatusChange(
           db,
           entryObjectId,
@@ -140,12 +89,10 @@ export async function handlePaymentCompletion(
           `Payment completion: Outstanding balance reset to ₹0, Credit limit increased by ₹${creditRestored.toFixed(2)} to ₹${newCreditLimit.toFixed(2)}`,
           companyId,
           userId,
-          0, // No interest when paid
+          0,
           creditRestored
         )
       }
-
-      // Step 3: Update customer's total outstanding balance
       await updateCustomerTotalBalance(customerObjectId, companyId)
     }
 
@@ -158,7 +105,6 @@ export async function handlePaymentCompletion(
       totalAmountSettled: paymentAmount,
       creditRestored
     }
-
   } catch (error) {
     console.error("Payment completion handling failed:", error)
     return {
@@ -171,6 +117,55 @@ export async function handlePaymentCompletion(
       creditRestored: 0
     }
   }
+}
+
+// Helper to reset entry balance
+async function resetEntryBalance(db: any, entryObjectId: ObjectId, originalEntry: any) {
+  await db.collection(collections.ledger).updateOne(
+    { _id: entryObjectId },
+    {
+      $set: {
+        status: "Paid",
+        paidAmount: originalEntry.amount,
+        paidDate: new Date(),
+        outstandingBalance: 0,
+        updatedAt: new Date(),
+        daysElapsed: 0,
+        accruedInterest: 0,
+        overdueStartDate: null,
+      }
+    }
+  )
+}
+
+// Helper to restore full credit limit
+async function restoreFullCreditLimit(db: any, customerObjectId: ObjectId, companyId: string, originalCreditLimit: number) {
+  await db.collection(collections.customerSettings).updateOne(
+    { customerId: customerObjectId, companyId },
+    {
+      $set: {
+        creditLimit: originalCreditLimit,
+        creditUsed: 0,
+        availableCredit: originalCreditLimit,
+        updatedAt: new Date(),
+      }
+    },
+    { upsert: true }
+  )
+}
+
+// Helper to restore partial credit limit
+async function restorePartialCreditLimit(db: any, customerObjectId: ObjectId, companyId: string, newCreditLimit: number) {
+  await db.collection(collections.customerSettings).updateOne(
+    { customerId: customerObjectId, companyId },
+    {
+      $set: {
+        creditLimit: newCreditLimit,
+        updatedAt: new Date(),
+      }
+    },
+    { upsert: true }
+  )
 }
 
 // Helper function to recalculate customer's total outstanding balance
