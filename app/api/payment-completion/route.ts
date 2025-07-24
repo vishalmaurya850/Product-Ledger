@@ -76,24 +76,29 @@ export async function POST(request: Request) {
 
     // Process each unpaid entry for completion
     const results = []
-    for (const entry of unpaidEntries) {
-      const remainingAmount = entry.amount - (entry.paidAmount || 0)
-      
-      if (remainingAmount > 0) {
-        const result = await handlePaymentCompletion(
-          customerObjectId,
-          companyId,
-          entry._id,
-          remainingAmount,
-          session.user.id
-        )
-        results.push({
-          entryId: entry._id,
-          amount: remainingAmount,
-          result
-        })
-      }
-    }
+    const results = await Promise.all(
+      unpaidEntries.map(async (entry) => {
+        const remainingAmount = entry.amount - (entry.paidAmount || 0)
+        if (remainingAmount > 0) {
+          const result = await handlePaymentCompletion(
+            customerObjectId,
+            companyId,
+            entry._id,
+            remainingAmount,
+            session.user.id
+          )
+          return {
+            entryId: entry._id,
+            amount: remainingAmount,
+            result
+          }
+        }
+        return null
+      })
+    )
+    // Filter out nulls (entries with no remaining amount)
+    const filteredResults = results.filter(Boolean)
+
 
     // Get final customer status
     const finalStatus = await getCustomerFinancialStatus(customerObjectId, companyId)
