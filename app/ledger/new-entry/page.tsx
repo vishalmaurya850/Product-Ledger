@@ -28,7 +28,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { createLedgerEntry } from "@/lib/actions"
-import { currencyOptions, type CurrencyOption } from "../../../utils/constant"
+import { currencyOptions, type CurrencyOption } from "@/utils/constant"
 import { getCurrencySymbol } from "../../../utils/getCurrencySymbol"
 
 interface CreditInfo {
