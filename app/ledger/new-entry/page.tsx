@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils"
 import { createLedgerEntry } from "@/lib/actions"
 import { currencyOptions, type CurrencyOption } from "../../../utils/constant"
+import { getCurrencySymbol } from "../../../utils/getCurrencySymbol"
 
 interface CreditInfo {
   creditLimit: number
@@ -126,11 +127,11 @@ export default function NewLedgerEntryPage() {
         
         if (entryAmount > remainingCredit) {
           setCreditWarning(
-            `⚠️ Credit limit exceeded! Available credit: ₹${remainingCredit.toFixed(2)}, Requested: ₹${entryAmount.toFixed(2)}. Exceeds by ₹${(entryAmount - remainingCredit).toFixed(2)}`
+            `⚠️ Credit limit exceeded! Available credit: ${getCurrencySymbol(currency)}${remainingCredit.toFixed(2)}, Requested: ${getCurrencySymbol(currency)}${entryAmount.toFixed(2)}. Exceeds by ${getCurrencySymbol(currency)}${(entryAmount - remainingCredit).toFixed(2)}`
           )
         } else if (entryAmount > remainingCredit * 0.8) {
           setCreditWarning(
-            `⚠️ Warning: This entry will use ${((entryAmount / creditInfo.creditLimit) * 100).toFixed(1)}% of total credit limit. Remaining after this: ₹${(remainingCredit - entryAmount).toFixed(2)}`
+            `⚠️ Warning: This entry will use ${((entryAmount / creditInfo.creditLimit) * 100).toFixed(1)}% of total credit limit. Remaining after this: ${getCurrencySymbol(currency)}${(remainingCredit - entryAmount).toFixed(2)}`
           )
         } else {
           setCreditWarning("")
@@ -348,21 +349,21 @@ export default function NewLedgerEntryPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-700">Credit Limit:</span>
-                      <span className="font-medium ml-2 text-gray-900">₹{creditInfo.creditLimit.toFixed(2)}</span>
+                      <span className="font-medium ml-2 text-gray-900">{getCurrencySymbol(currency)}{creditInfo.creditLimit.toFixed(2)}</span>
                     </div>
                     <div>
                       <span className="text-gray-700">Available Credit:</span>
                       <span className={`font-medium ml-2 ${creditInfo.availableCredit > 0 ? 'text-green-700' : 'text-red-700'}`}>
-                        ₹{creditInfo.availableCredit.toFixed(2)}
+                        {getCurrencySymbol(currency)}{creditInfo.availableCredit.toFixed(2)}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-700">Credit Used:</span>
-                      <span className="font-medium ml-2 text-gray-900">₹{creditInfo.creditUsed.toFixed(2)}</span>
+                      <span className="font-medium ml-2 text-gray-900">{getCurrencySymbol(currency)}{creditInfo.creditUsed.toFixed(2)}</span>
                     </div>
                     <div>
                       <span className="text-gray-700">Outstanding:</span>
-                      <span className="font-medium ml-2 text-gray-900">₹{creditInfo.totalOutstanding.toFixed(2)}</span>
+                      <span className="font-medium ml-2 text-gray-900">{getCurrencySymbol(currency)}{creditInfo.totalOutstanding.toFixed(2)}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -538,15 +539,15 @@ export default function NewLedgerEntryPage() {
                 <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Requested Amount:</span>
-                    <span className="font-semibold text-red-600">₹{creditExceededData.requestedAmount.toFixed(2)}</span>
+                    <span className="font-semibold text-red-600">{getCurrencySymbol(currency)}{creditExceededData.requestedAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Available Credit:</span>
-                    <span className="font-semibold text-green-600">₹{creditExceededData.availableCredit.toFixed(2)}</span>
+                    <span className="font-semibold text-green-600">{getCurrencySymbol(currency)}{creditExceededData.availableCredit.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm border-t border-red-200 pt-2">
                     <span className="text-gray-600">Excess Amount:</span>
-                    <span className="font-bold text-red-700">₹{creditExceededData.excess.toFixed(2)}</span>
+                    <span className="font-bold text-red-700">{getCurrencySymbol(currency)}{creditExceededData.excess.toFixed(2)}</span>
                   </div>
                 </div>
               )}
@@ -554,7 +555,7 @@ export default function NewLedgerEntryPage() {
               <div className="text-sm text-gray-600">
                 Please either:
                 <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>Reduce the entry amount to ₹{creditInfo?.availableCredit.toFixed(2) || '0.00'} or less</li>
+                  <li>Reduce the entry amount to {getCurrencySymbol(currency)}{creditInfo?.availableCredit.toFixed(2) || '0.00'} or less</li>
                   <li>Contact the administrator to increase the credit limit</li>
                   <li>Process payment entries to free up available credit</li>
                 </ul>
