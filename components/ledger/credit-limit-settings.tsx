@@ -31,7 +31,7 @@ export function InlineCreditSettings({ customerId, initialSettings, onSettingsUp
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/customers/${customerId}/credit-settings`, {
+      const response = await fetch(`/api/customers/${customerId}/credit-setting`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
