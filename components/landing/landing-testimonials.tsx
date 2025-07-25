@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import StarRating from "@/components/ui/StarRating"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
 
 export function LandingTestimonials() {
   return (
@@ -34,6 +36,9 @@ export function LandingTestimonials() {
               initials: "JD",
               quote:
                 "Product Ledger has transformed how we manage our finances. The overdue management feature alone has saved us thousands.",
+              ratings: 4.5,
+              image: "/avatar.jpg",
+              date: new Date("10-08-2024")
             },
             {
               name: "Jane Smith",
@@ -41,6 +46,9 @@ export function LandingTestimonials() {
               initials: "JS",
               quote:
                 "The real-time data management has been a game-changer for our inventory tracking. We always know exactly what we have in stock.",
+              ratings: 5.0,
+              image: "/avatar.jpg",
+              date: new Date("12-02-2025")
             },
             {
               name: "Robert Johnson",
@@ -48,8 +56,12 @@ export function LandingTestimonials() {
               initials: "RJ",
               quote:
                 "As a small business owner, I needed something simple yet powerful. Product Ledger is exactly that - easy to use but with all the features I need.",
+              ratings: 4.0,
+              image: "/avatar.jpg",
+              date: new Date("05-06-2025")
             },
-          ].map((testimonial, index) => (
+
+          ].sort((a, b) => b.date.getTime() - a.date.getTime()).map((testimonial, index) => (
             <Card
               key={index}
               className="transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:scale-105 hover:bg-background/80 hover:border-primary/20 group cursor-pointer"
@@ -57,21 +69,27 @@ export function LandingTestimonials() {
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <Avatar className="transition-transform duration-300 group-hover:scale-110">
-                    <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Avatar" />
+                    <AvatarImage src={testimonial.image} alt="Avatar" />
                     <AvatarFallback>{testimonial.initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="transition-colors duration-300 group-hover:text-primary">
+                    <CardTitle className="transition-colors duration-300 group-hover:text-primary pt-4">
                       {testimonial.name}
                     </CardTitle>
-                    <CardDescription className="transition-colors duration-300 group-hover:text-primary/70">
+                    <CardDescription className="transition-colors duration-300 group-hover:text-primary/70 pt-1">
                       {testimonial.title}
                     </CardDescription>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {testimonial.date.toLocaleDateString()}
+                    </p>
+                  
+                  
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 &quot;{testimonial.quote}&quot;
+                <StarRating rating={testimonial.ratings}/>
               </CardContent>
             </Card>
           ))}
