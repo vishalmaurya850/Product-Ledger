@@ -75,6 +75,7 @@ export async function POST() {
       if (newStatus === "Overdue" && overdueStartDate) {
         const daysOverdue = Math.floor((today.getTime() - overdueStartDate.getTime()) / (1000 * 60 * 60 * 24))
         if (daysOverdue > 0) {
+          const dailyRate = interestRate / 365 / 100
           accruedInterest += entry.amount * dailyRate * daysOverdue
         }
       }

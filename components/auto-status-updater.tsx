@@ -37,7 +37,6 @@ export function AutoStatusUpdater() {
         setIsUpdating(false)
       }
     }
-    }
   }
 
   // Run auto-update when component mounts
