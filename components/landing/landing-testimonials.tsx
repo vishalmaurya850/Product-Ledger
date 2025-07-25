@@ -37,7 +37,7 @@ export function LandingTestimonials() {
               quote:
                 "Product Ledger has transformed how we manage our finances. The overdue management feature alone has saved us thousands.",
               ratings: 4.5,
-              image: "/avatar.jpg",
+              image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
               date: new Date("10-08-2024")
             },
             {
@@ -47,7 +47,7 @@ export function LandingTestimonials() {
               quote:
                 "The real-time data management has been a game-changer for our inventory tracking. We always know exactly what we have in stock.",
               ratings: 5.0,
-              image: "/avatar.jpg",
+              image: "https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJvZmlsZXxlbnwwfHwwfHx8MA%3D%3D",
               date: new Date("12-02-2025")
             },
             {
@@ -57,7 +57,7 @@ export function LandingTestimonials() {
               quote:
                 "As a small business owner, I needed something simple yet powerful. Product Ledger is exactly that - easy to use but with all the features I need.",
               ratings: 4.0,
-              image: "/avatar.jpg",
+              image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
               date: new Date("05-06-2025")
             },
 
@@ -69,7 +69,7 @@ export function LandingTestimonials() {
               <CardHeader>
                 <div className="flex items-center gap-4">
                   <Avatar className="transition-transform duration-300 group-hover:scale-110">
-                    <AvatarImage src={testimonial.image} alt="Avatar" />
+                    <AvatarImage src={testimonial.image} alt="Avatar"/>
                     <AvatarFallback>{testimonial.initials}</AvatarFallback>
                   </Avatar>
                   <div>
