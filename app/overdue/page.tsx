@@ -120,6 +120,37 @@ export default function OverduePage() {
     fetchCreditSettings()
   }
 
+  const handleUpdateStatuses = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/ledger/update-statuses", {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update payment statuses")
+      }
+
+      const result = await response.json()
+      toast({
+        title: "Payment statuses updated",
+        description: `Updated ${result.updatedCount} entries out of ${result.totalProcessed} processed.`,
+      })
+
+      // Refresh the entries list
+      fetchOverdueEntries()
+    } catch (error) {
+      console.error("Error updating payment statuses:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update payment statuses. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSettingsUpdate = (newSettings: any) => {
     setCreditSettings(newSettings)
     fetchOverdueEntries() // Refresh data with new settings
@@ -158,7 +189,7 @@ export default function OverduePage() {
   const createTestData = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch("/api/test/create-overdue", {
+      const response = await fetch("/api/test/create-credit-test-data", {
         method: "POST",
       })
 
@@ -168,8 +199,8 @@ export default function OverduePage() {
 
       const data = await response.json()
       toast({
-        title: "Test data created",
-        description: data.message,
+        title: "Credit test data created",
+        description: `${data.message}. Created ${data.entriesCreated} entries for testing.`,
       })
 
       // Refresh the entries list
@@ -192,7 +223,25 @@ export default function OverduePage() {
         <h2 className="text-3xl font-bold tracking-tight">Overdue Payments</h2>
         <div className="flex items-center space-x-2">
           <Button variant="outline" onClick={createTestData} disabled={isLoading}>
-            Create Test Data
+            Create Credit Test Data
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleUpdateStatuses} 
+            disabled={isLoading}
+            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Update Statuses
+              </>
+            )}
           </Button>
           <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? (
@@ -279,6 +328,12 @@ export default function OverduePage() {
                     </TableHead>
                     <TableHead>
                       <Button variant="ghost" className="p-0 font-medium">
+                        Days Elapsed
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" className="p-0 font-medium">
                         Days Overdue
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       </Button>
@@ -286,13 +341,14 @@ export default function OverduePage() {
                     <TableHead className="text-right">Original Amount</TableHead>
                     <TableHead className="text-right">Interest</TableHead>
                     <TableHead className="text-right">Total Due</TableHead>
+                    <TableHead>Overdue Since</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredEntries.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center">
+                      <TableCell colSpan={9} className="h-24 text-center">
                         No overdue entries found. All payments are up to date.
                       </TableCell>
                     </TableRow>
@@ -305,21 +361,38 @@ export default function OverduePage() {
                         <TableCell>{entry.description}</TableCell>
                         <TableCell>{format(new Date(entry.dueDate), "MMM d, yyyy")}</TableCell>
                         <TableCell>
+                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                            {entry.daysElapsed || 0} days
+                          </span>
+                        </TableCell>
+                        <TableCell>
                           <span
                             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              entry.daysOverdue > 30
+                              (entry.daysOverdue || 0) > 30
                                 ? "bg-red-100 text-red-800"
-                                : entry.daysOverdue > 15
+                                : (entry.daysOverdue || 0) > 15
                                   ? "bg-orange-100 text-orange-800"
-                                  : "bg-yellow-100 text-yellow-800"
+                                  : (entry.daysOverdue || 0) > 0
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-green-100 text-green-800"
                             }`}
                           >
-                            {entry.daysOverdue} days (grace: {creditSettings.gracePeriod} days)
+                            {entry.daysOverdue || 0} days
+                            {entry.gracePeriod && ` (grace: ${entry.gracePeriod})`}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">₹{entry.amount.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">₹{entry.interest.toFixed(2)}</TableCell>
-                        <TableCell className="text-right font-medium">₹{entry.totalDue.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">₹{(entry.interest || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-medium">₹{(entry.totalDue || entry.amount).toFixed(2)}</TableCell>
+                        <TableCell>
+                          {entry.overdueStartDate ? (
+                            <span className="text-sm text-gray-600">
+                              {format(new Date(entry.overdueStartDate), "MMM d, yyyy")}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

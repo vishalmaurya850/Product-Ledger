@@ -12,24 +12,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { CalendarIcon, Loader2, AlertTriangle, CreditCard } from "lucide-react"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { createLedgerEntry } from "@/lib/actions"
-import { currencyOptions, type CurrencyOption } from "@/utils/constant"
-import { getCurrencySymbol } from "../../../utils/getCurrencySymbol"
 
 interface CreditInfo {
   creditLimit: number
@@ -50,7 +38,6 @@ export default function NewLedgerEntryPage() {
   const [date, setDate] = useState<Date>(new Date())
   const [type, setType] = useState<string>("Sell")
   const [amount, setAmount] = useState<string>("")
-  const [currency, setCurrency] = useState<string>("INR")
   const [description, setDescription] = useState<string>("")
   const [product, setProduct] = useState<string>("")
   const [notes, setNotes] = useState<string>("")
@@ -59,14 +46,6 @@ export default function NewLedgerEntryPage() {
   const [creditInfo, setCreditInfo] = useState<CreditInfo | null>(null)
   const [loadingCredit, setLoadingCredit] = useState(false)
   const [creditWarning, setCreditWarning] = useState<string>("")
-  
-  // Warning dialog state
-  const [showCreditWarning, setShowCreditWarning] = useState(false)
-  const [creditExceededData, setCreditExceededData] = useState<{
-    requestedAmount: number
-    availableCredit: number
-    excess: number
-  } | null>(null)
 
   // Fetch customer credit information
   const fetchCreditInfo = async (customerId: string) => {
@@ -77,41 +56,17 @@ export default function NewLedgerEntryPage() {
 
     try {
       setLoadingCredit(true)
-      
-      // Try the recalculation API first for most accurate data
-      const recalcResponse = await fetch(`/api/customers/${customerId}/credit-settings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (recalcResponse.ok) {
-        const recalcData = await recalcResponse.json()
-        setCreditInfo({
-          creditLimit: recalcData.creditLimit,
-          availableCredit: recalcData.availableCredit,
-          creditUsed: recalcData.creditUsed,
-          totalOutstanding: recalcData.totalOutstandingBalance || 0
-        })
-        return
-      }
-      
-      // Fallback to payment-completion API
       const response = await fetch(`/api/payment-completion?customerId=${customerId}`)
       
       if (response.ok) {
         const data = await response.json()
-        if (data.customerStatus) {
-          setCreditInfo(data.customerStatus)
-        } else {
-          setCreditInfo(null)
-        }
+        setCreditInfo(data.customerStatus)
       } else {
+        console.error("Failed to fetch credit info")
         setCreditInfo(null)
       }
     } catch (error) {
-      console.error("❌ Error fetching credit info:", error)
+      console.error("Error fetching credit info:", error)
       setCreditInfo(null)
     } finally {
       setLoadingCredit(false)
@@ -127,11 +82,11 @@ export default function NewLedgerEntryPage() {
         
         if (entryAmount > remainingCredit) {
           setCreditWarning(
-            `⚠️ Credit limit exceeded! Available credit: ${getCurrencySymbol(currency)}${remainingCredit.toFixed(2)}, Requested: ${getCurrencySymbol(currency)}${entryAmount.toFixed(2)}. Exceeds by ${getCurrencySymbol(currency)}${(entryAmount - remainingCredit).toFixed(2)}`
+            `⚠️ Credit limit exceeded! Available credit: ₹${remainingCredit.toFixed(2)}, Requested: ₹${entryAmount.toFixed(2)}. Exceeds by ₹${(entryAmount - remainingCredit).toFixed(2)}`
           )
         } else if (entryAmount > remainingCredit * 0.8) {
           setCreditWarning(
-            `⚠️ Warning: This entry will use ${((entryAmount / creditInfo.creditLimit) * 100).toFixed(1)}% of total credit limit. Remaining after this: ${getCurrencySymbol(currency)}${(remainingCredit - entryAmount).toFixed(2)}`
+            `⚠️ Warning: This entry will use ${((entryAmount / creditInfo.creditLimit) * 100).toFixed(1)}% of total credit limit. Remaining after this: ₹${(remainingCredit - entryAmount).toFixed(2)}`
           )
         } else {
           setCreditWarning("")
@@ -151,11 +106,6 @@ export default function NewLedgerEntryPage() {
     }
   }, [selectedCustomer])
 
-  // Debug dialog state changes
-  useEffect(() => {
-    // Debug state changes if needed
-  }, [showCreditWarning, creditExceededData])
-
   // Fetch customers and products
   useEffect(() => {
     async function fetchData() {
@@ -172,6 +122,7 @@ export default function NewLedgerEntryPage() {
 
         if (customersResponse.ok) {
           const customersData = await customersResponse.json()
+          console.log("Fetched customers for ledger entry:", customersData.length)
           setCustomers(customersData)
         } else {
           console.error("Failed to fetch customers:", customersResponse.status)
@@ -188,6 +139,7 @@ export default function NewLedgerEntryPage() {
 
         if (productsResponse.ok) {
           const productsData = await productsResponse.json()
+          console.log("Fetched products for ledger entry:", productsData.length)
           setProducts(productsData)
         } else {
           console.error("Failed to fetch products:", productsResponse.status)
@@ -221,16 +173,12 @@ export default function NewLedgerEntryPage() {
     // Credit limit validation for Sell transactions
     if (type === "Sell" && creditInfo && amount) {
       const entryAmount = parseFloat(amount)
-      
       if (entryAmount > creditInfo.availableCredit) {
-        // Show warning dialog instead of just toast
-        const excess = entryAmount - creditInfo.availableCredit
-        setCreditExceededData({
-          requestedAmount: entryAmount,
-          availableCredit: creditInfo.availableCredit,
-          excess: excess
+        toast({
+          title: "Credit Limit Exceeded",
+          description: `Cannot create sell entry. Available credit: ₹${creditInfo.availableCredit.toFixed(2)}, Requested: ₹${entryAmount.toFixed(2)}`,
+          variant: "destructive",
         })
-        setShowCreditWarning(true)
         return
       }
     }
@@ -253,48 +201,14 @@ export default function NewLedgerEntryPage() {
         formData.append("notes", notes)
       }
 
+      console.log("Submitting ledger entry for customer:", selectedCustomer)
       const result = await createLedgerEntry(formData)
 
       if (result.success) {
-        // Recalculate credit for payment entries to ensure accurate display
-        if (type === "Payment In") {
-          try {
-            const recalcResponse = await fetch(`/api/customers/${selectedCustomer}/credit-settings`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            })
-            
-            if (recalcResponse.ok) {
-              const recalcData = await recalcResponse.json()
-            }
-          } catch (recalcError) {
-            console.error("Failed to recalculate credit:", recalcError)
-          }
-        }
-        
-        // Refresh credit information after creating entry
-        if (type === "Sell" || type === "Payment In") {
-          await fetchCreditInfo(selectedCustomer)
-        }
-        
-        // Trigger global refresh for ledger table and other components
-        if (typeof window !== 'undefined') {
-          if ((window as any).refreshLedgerTable) {
-            (window as any).refreshLedgerTable()
-          }
-          if ((window as any).refreshLedgerData) {
-            (window as any).refreshLedgerData()
-          }
-          if ((window as any).refreshCreditDisplay) {
-            (window as any).refreshCreditDisplay()
-          }
-        }
-        
+        console.log("Ledger entry created successfully")
         toast({
           title: "Entry created",
-          description: `${type} entry created successfully. ${type === "Sell" ? "Credit limit updated." : type === "Payment In" ? "Credit restored." : ""}`,
+          description: "Ledger entry has been created successfully",
         })
         router.push(`/ledger?customerId=${selectedCustomer}`)
       } else {
@@ -348,22 +262,22 @@ export default function NewLedgerEntryPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-700">Credit Limit:</span>
-                      <span className="font-medium ml-2 text-gray-900">{getCurrencySymbol(currency)}{creditInfo.creditLimit.toFixed(2)}</span>
+                      <span className="text-gray-600">Credit Limit:</span>
+                      <span className="font-medium ml-2">₹{creditInfo.creditLimit.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="text-gray-700">Available Credit:</span>
-                      <span className={`font-medium ml-2 ${creditInfo.availableCredit > 0 ? 'text-green-700' : 'text-red-700'}`}>
-                        {getCurrencySymbol(currency)}{creditInfo.availableCredit.toFixed(2)}
+                      <span className="text-gray-600">Available Credit:</span>
+                      <span className={`font-medium ml-2 ${creditInfo.availableCredit > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ₹{creditInfo.availableCredit.toFixed(2)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-700">Credit Used:</span>
-                      <span className="font-medium ml-2 text-gray-900">{getCurrencySymbol(currency)}{creditInfo.creditUsed.toFixed(2)}</span>
+                      <span className="text-gray-600">Credit Used:</span>
+                      <span className="font-medium ml-2">₹{creditInfo.creditUsed.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="text-gray-700">Outstanding:</span>
-                      <span className="font-medium ml-2 text-gray-900">{getCurrencySymbol(currency)}{creditInfo.totalOutstanding.toFixed(2)}</span>
+                      <span className="text-gray-600">Outstanding:</span>
+                      <span className="font-medium ml-2">₹{creditInfo.totalOutstanding.toFixed(2)}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -406,38 +320,23 @@ export default function NewLedgerEntryPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
-                <div className="flex items-center space-x-2">
-                  <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger className="w-24">
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencyOptions.map((option: CurrencyOption) => (
-                        <SelectItem key={option.code} value={option.code}>
-                          {option.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                    className={creditWarning && type === "Sell" ? "border-orange-300 focus:border-orange-500" : ""}
-                  />
-                </div>
+                <Label htmlFor="amount">Amount (₹)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  required
+                  className={creditWarning && type === "Sell" ? "border-orange-300 focus:border-orange-500" : ""}
+                />
                 
                 {/* Credit Validation Alert */}
                 {creditWarning && type === "Sell" && (
                   <Alert className={creditInfo && parseFloat(amount) > creditInfo.availableCredit ? "border-red-300 bg-red-50" : "border-orange-300 bg-orange-50"}>
-                    <AlertTriangle className="h-4 w-4 text-orange-600" />
-                    <AlertDescription className="text-sm text-gray-800">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
                       {creditWarning}
                     </AlertDescription>
                   </Alert>
@@ -476,28 +375,12 @@ export default function NewLedgerEntryPage() {
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
-            
-            {/* Temporary test button for debugging */}
-            {process.env.NODE_ENV === 'development' && (
-              <Button 
-                type="button" 
-                variant="secondary" 
-                onClick={() => {
-                  setCreditExceededData({
-                    requestedAmount: 5000,
-                    availableCredit: 2000,
-                    excess: 3000
-                  })
-                  setShowCreditWarning(true)
-                }}
-              >
-                Test Warning
-              </Button>
-            )}
-            
             <Button 
               type="submit" 
-              disabled={isLoading}
+              disabled={
+                isLoading || 
+                (type === "Sell" && creditInfo && parseFloat(amount) > creditInfo.availableCredit)
+              }
               className={
                 type === "Sell" && creditInfo && parseFloat(amount) > creditInfo.availableCredit
                   ? "bg-red-600 hover:bg-red-700" 
@@ -521,68 +404,6 @@ export default function NewLedgerEntryPage() {
           </CardFooter>
         </form>
       </Card>
-
-      {/* Credit Limit Warning Dialog */}
-      <AlertDialog open={showCreditWarning} onOpenChange={setShowCreditWarning}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" />
-              Credit Limit Exceeded
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <div className="text-gray-700">
-                You are trying to create a sell entry that exceeds the available credit limit.
-              </div>
-              
-              {creditExceededData && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Requested Amount:</span>
-                    <span className="font-semibold text-red-600">{getCurrencySymbol(currency)}{creditExceededData.requestedAmount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Available Credit:</span>
-                    <span className="font-semibold text-green-600">{getCurrencySymbol(currency)}{creditExceededData.availableCredit.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm border-t border-red-200 pt-2">
-                    <span className="text-gray-600">Excess Amount:</span>
-                    <span className="font-bold text-red-700">{getCurrencySymbol(currency)}{creditExceededData.excess.toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-              
-              <div className="text-sm text-gray-600">
-                Please either:
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>Reduce the entry amount to {getCurrencySymbol(currency)}{creditInfo?.availableCredit.toFixed(2) || '0.00'} or less</li>
-                  <li>Contact the administrator to increase the credit limit</li>
-                  <li>Process payment entries to free up available credit</li>
-                </ul>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowCreditWarning(false)}>
-              Got it
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                setShowCreditWarning(false)
-                // Focus on amount field to edit
-                const amountInput = document.querySelector('input[name="amount"]') as HTMLInputElement
-                if (amountInput) {
-                  amountInput.focus()
-                  amountInput.select()
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Edit Amount
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
