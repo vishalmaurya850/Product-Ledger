@@ -1,7 +1,13 @@
-export const currencyOptions = [
-  { code: "USD", symbol: "$" },
-  { code: "EUR", symbol: "€" },
-  { code: "INR", symbol: "₹" },
-  { code: "GBP", symbol: "£" },
-  { code: "JPY", symbol: "¥" },
-];
+export interface CurrencyOption {
+  code: string;
+  symbol: string;
+  name: string;
+}
+
+export const currencyOptions: CurrencyOption[] = [
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+]

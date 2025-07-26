@@ -123,7 +123,7 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Company Credit Settings</h3>
+        <h3 className="text-lg font-medium">Effective Credit Settings</h3>
         <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)}>
           <Settings className="h-4 w-4 mr-2" />
           {showSettings ? "Hide Settings" : "Show Settings"}
@@ -147,13 +147,13 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Grace Period</p>
+                <p className="text-sm text-muted-foreground">Grace Period (Applied)</p>
                 <p className="text-lg font-medium">
                   {(creditSettings.gracePeriod ?? 0)} days
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Interest Rate</p>
+                <p className="text-sm text-muted-foreground">Interest Rate (Applied)</p>
                 <p className="text-lg font-medium">
                   {(creditSettings.interestRate ?? 0)}% per annum
                 </p>
