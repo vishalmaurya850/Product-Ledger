@@ -34,7 +34,6 @@ export function CustomerLedgerView() {
         setIsLoading(true)
         setFetchError(null)
 
-        console.log("Fetching customers for ledger view...")
         const timestamp = new Date().getTime() // Add timestamp to prevent caching
         const response = await fetch(`/api/customers?t=${timestamp}`, {
           cache: "no-store",
@@ -49,11 +48,9 @@ export function CustomerLedgerView() {
         }
 
         const data = await response.json()
-        console.log("Customers data received for ledger:", data)
 
         if (Array.isArray(data)) {
           setCustomers(data)
-          console.log(`Loaded ${data.length} customers for ledger view`)
 
           // Fetch balances for all customers
           fetchCustomerBalances(data)
@@ -62,12 +59,9 @@ export function CustomerLedgerView() {
           if (customerId && data.length > 0) {
             const customer = data.find((c: any) => c._id === customerId)
             if (customer) {
-              console.log("Selected customer from URL:", customer.name)
               setSelectedCustomer(customer)
               // Fetch credit settings for this customer
               fetchCreditSettings(customerId)
-            } else {
-              console.log("Customer ID from URL not found in data:", customerId)
             }
           }
         } else {
@@ -183,7 +177,46 @@ export function CustomerLedgerView() {
   const handleCreditSettingsUpdate = (updatedSettings: any) => {
     setCreditSettings(updatedSettings)
     setRefreshTrigger((prev) => prev + 1)
+    
+    // Also update customer balances after credit changes
+    if (customers.length > 0) {
+      fetchCustomerBalances(customers)
+    }
+    
+    toast({
+      title: "Credit Settings Updated",
+      description: "Credit limit changes have been applied and UI refreshed",
+    })
   }
+
+  // Handle payment completion refresh (for real-time updates)
+  const handlePaymentUpdate = () => {
+    if (selectedCustomer) {
+      fetchCreditSettings(selectedCustomer._id)
+      if (customers.length > 0) {
+        fetchCustomerBalances(customers)
+      }
+      setRefreshTrigger((prev) => prev + 1)
+      
+      toast({
+        title: "Payment Processed",
+        description: "Credit limits and balances have been updated",
+      })
+    }
+  }
+
+  // Expose refresh methods to window for global access
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).refreshLedgerData = handlePaymentUpdate
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).refreshLedgerData
+      }
+    }
+  }, [selectedCustomer, customers])
 
   if (isLoading) {
     return (
