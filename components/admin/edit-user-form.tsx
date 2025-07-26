@@ -9,7 +9,15 @@ import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/components/ui/use-toast"
@@ -194,11 +202,11 @@ export function EditUserForm({ user }: EditUserFormProps) {
                     <div className="space-y-2">
                       {modulePermissions.map((permission) => (
                         <FormField
-                          key={permission.name}
+                          key={`${module}-${permission.name}`}
                           control={form.control}
                           name="permissions"
                           render={({ field }) => (
-                            <FormItem key={permission.name} className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                               <FormControl>
                                 <Checkbox
                                   checked={field.value?.includes(permission.name)}
