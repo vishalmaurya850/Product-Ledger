@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+// import { Inter } from "next/font/google"
 import "./globals.css"
 
 import { ThemeProvider } from "@/components/theme-provider"
@@ -8,11 +8,12 @@ import { SideNav } from "@/components/side-nav"
 import { TopNav } from "@/components/top-nav"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth-provider"
+import { AutoStatusUpdater } from "@/components/auto-status-updater"
 import { getCompanyName } from "@/lib/actions";
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-const inter = Inter({ subsets: ["latin"] })
+// const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Product Ledger - Business Management System",
@@ -30,7 +31,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className="font-sans">
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             {isAuthenticated ? (
@@ -40,6 +41,7 @@ export default async function RootLayout({
                   <SideNav />
                   <main className="flex-1 overflow-auto">{children}</main>
                 </div>
+                <AutoStatusUpdater />
               </div>
             ) : (
               <main>{children}</main>

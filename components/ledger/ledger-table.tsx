@@ -83,6 +83,46 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
   const [isSettling, setIsSettling] = useState(false)
   const [paymentEntryId, setPaymentEntryId] = useState<string | null>(null)
   const [showCreditSettings, setShowCreditSettings] = useState(false)
+  const [currentCreditStatus, setCurrentCreditStatus] = useState<any>(null)
+
+  // Fetch current credit status for the customer
+  const fetchCreditStatus = async () => {
+    if (!customerId) return
+    
+    try {
+      // First try to get real-time credit status by triggering recalculation
+      const recalcResponse = await fetch(`/api/customers/${customerId}/credit-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: "no-store"
+      })
+      
+      if (recalcResponse.ok) {
+        const recalcData = await recalcResponse.json()
+        setCurrentCreditStatus({
+          creditLimit: recalcData.creditLimit,
+          creditUsed: recalcData.creditUsed,
+          availableCredit: recalcData.availableCredit,
+          totalOutstandingBalance: recalcData.totalOutstandingBalance,
+        })
+        return
+      }
+      
+      // Fallback to payment-completion endpoint
+      const response = await fetch(`/api/payment-completion?customerId=${customerId}`, {
+        cache: "no-store"
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setCurrentCreditStatus(data.customerStatus)
+      }
+    } catch (error) {
+      console.error("Error fetching credit status:", error)
+    }
+  }
 
   // Check permissions
   const canEdit = userPermissions.includes("ledger_edit")
@@ -138,6 +178,9 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
       } else {
         console.warn("Could not load credit settings, using defaults")
       }
+
+      // Fetch current credit status
+      await fetchCreditStatus()
 
       // Calculate balances and interest
       let runningBalance = 0
@@ -236,7 +279,47 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
 
   useEffect(() => {
     fetchData()
+    
+    // Expose refresh function for global access
+    if (typeof window !== 'undefined') {
+      (window as any).refreshLedgerTable = () => {
+        console.log("🔄 Refreshing ledger table after credit changes...")
+        fetchData()
+      }
+      
+      // Add credit-specific refresh function
+      (window as any).refreshCreditDisplay = () => {
+        console.log("💳 Refreshing credit display...")
+        fetchCreditStatus()
+      }
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).refreshLedgerTable
+        delete (window as any).refreshCreditDisplay
+      }
+    }
   }, [customerId])
+
+  // Auto-refresh credit status when entries change
+  useEffect(() => {
+    if (entries.length > 0) {
+      console.log("📊 Entries changed, refreshing credit status...")
+      fetchCreditStatus()
+    }
+  }, [entries.length, customerId])
+
+  // Additional refresh when entries are updated (more sensitive)
+  useEffect(() => {
+    if (entries.length > 0) {
+      const hasPaymentEntries = entries.some(entry => entry.type === "Payment In")
+      if (hasPaymentEntries) {
+        console.log("💰 Payment entries detected, refreshing credit display...")
+        setTimeout(() => fetchCreditStatus(), 500) // Small delay to ensure backend updates are complete
+      }
+    }
+  }, [entries, customerId])
 
   // Handle sorting
   const handleSort = (field: string) => {
@@ -658,11 +741,33 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
         </div>
 
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-600">
-            Credit Limit: <span className="font-semibold">₹{creditSettings.creditLimit.toFixed(2)}</span> | Grace
-            Period: <span className="font-semibold">{creditSettings.gracePeriod} days</span> | Interest Rate:{" "}
-            <span className="font-semibold">{creditSettings.interestRate}%</span>
-          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-600">
+            <div>
+              <span className="font-semibold">Total Credit Limit:</span>
+              <div className="text-lg font-bold">₹{creditSettings.creditLimit.toFixed(2)}</div>
+            </div>
+            {currentCreditStatus && (
+              <>
+                <div>
+                  <span className="font-semibold">Available Credit:</span>
+                  <div className={`text-lg font-bold ${currentCreditStatus.availableCredit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ₹{currentCreditStatus.availableCredit.toFixed(2)}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-semibold">Credit Used:</span>
+                  <div className="text-lg font-bold text-orange-600">₹{currentCreditStatus.creditUsed.toFixed(2)}</div>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="mt-2 pt-2 border-t border-blue-200 text-xs text-blue-500">
+            Grace Period: <span className="font-semibold">{creditSettings.gracePeriod} days</span> | 
+            Interest Rate: <span className="font-semibold">{creditSettings.interestRate}%</span>
+            {currentCreditStatus && currentCreditStatus.availableCredit < 0 && (
+              <span className="ml-2 text-red-600 font-semibold">⚠️ CREDIT LIMIT EXCEEDED</span>
+            )}
+          </div>
         </div>
         {showCreditSettings && (
           <div className="mt-2">

@@ -7,6 +7,131 @@ import { getServerSession } from "next-auth"
 import bcrypt from "bcryptjs"
 import { authOptions } from "@/lib/auth"
 
+// Credit Management Helper Functions
+async function updateCustomerCreditUsage(customerId: ObjectId, companyId: string, sellAmount: number) {
+  const { db } = await connectToDatabase()
+  
+  try {
+    // Get current customer credit settings
+    const customerSettings = await db.collection(collections.customerSettings).findOne({
+      customerId,
+      companyId,
+    })
+    
+    if (!customerSettings) {
+      // Create default settings if none exist
+      const defaultCreditLimit = 10000
+      await db.collection(collections.customerSettings).insertOne({
+        customerId,
+        companyId,
+        creditLimit: defaultCreditLimit,
+        originalCreditLimit: defaultCreditLimit,
+        creditUsed: sellAmount,
+        availableCredit: defaultCreditLimit - sellAmount,
+        totalOutstandingBalance: sellAmount,
+        gracePeriod: 30,
+        interestRate: 18,
+        fineAmount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    } else {
+      // Update existing settings - recalculate from all entries
+      const allEntries = await db.collection(collections.ledger).find({
+        customerId,
+        companyId,
+      }).toArray()
+      
+      // Calculate total sells and total payments
+      let totalSells = 0
+      let totalPayments = 0
+      let totalOutstanding = 0
+      
+      for (const entry of allEntries) {
+        if (entry.type === "Sell") {
+          const entryBalance = entry.amount - (entry.paidAmount || 0)
+          totalSells += entry.amount
+          totalOutstanding += Math.max(0, entryBalance + (entry.accruedInterest || 0))
+        } else if (entry.type === "Payment In") {
+          totalPayments += entry.amount
+        }
+      }
+      
+      // Credit used is total sells minus total payments (but not below 0)
+      const totalCreditUsed = Math.max(0, totalSells - totalPayments)
+      const newAvailableCredit = customerSettings.creditLimit - totalCreditUsed
+      
+      await db.collection(collections.customerSettings).updateOne(
+        { customerId, companyId },
+        {
+          $set: {
+            creditUsed: totalCreditUsed,
+            availableCredit: newAvailableCredit,
+            totalOutstandingBalance: totalOutstanding,
+            updatedAt: new Date(),
+          }
+        }
+      )
+    }
+  } catch (error) {
+    console.error("Failed to update customer credit usage:", error)
+  }
+}
+
+async function restoreCustomerCredit(customerId: ObjectId, companyId: string, paymentAmount: number) {
+  const { db } = await connectToDatabase()
+  
+  try {
+    
+    // Get current customer credit settings
+    const customerSettings = await db.collection(collections.customerSettings).findOne({
+      customerId,
+      companyId,
+    })
+    
+    if (customerSettings) {
+      // Get all ledger entries for proper calculation
+      const allEntries = await db.collection(collections.ledger).find({
+        customerId,
+        companyId,
+      }).toArray()
+      
+      // Calculate total sells and total payments
+      let totalSells = 0
+      let totalPayments = 0
+      let totalOutstanding = 0
+      
+      for (const entry of allEntries) {
+        if (entry.type === "Sell") {
+          const entryBalance = entry.amount - (entry.paidAmount || 0)
+          totalSells += entry.amount
+          totalOutstanding += Math.max(0, entryBalance + (entry.accruedInterest || 0))
+        } else if (entry.type === "Payment In") {
+          totalPayments += entry.amount
+        }
+      }
+      
+      // Credit used is total sells minus total payments (but not below 0)
+      const totalCreditUsed = Math.max(0, totalSells - totalPayments)
+      const newAvailableCredit = customerSettings.creditLimit - totalCreditUsed
+      
+      await db.collection(collections.customerSettings).updateOne(
+        { customerId, companyId },
+        {
+          $set: {
+            creditUsed: totalCreditUsed,
+            availableCredit: newAvailableCredit,
+            totalOutstandingBalance: totalOutstanding,
+            updatedAt: new Date(),
+          }
+        }
+      )
+    }
+  } catch (error) {
+    console.error("Failed to restore customer credit:", error)
+  }
+}
+
 export async function getCurrentUserPermissions() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { role: null, permissions: [] };
@@ -23,13 +148,7 @@ async function getUserSession() {
   }
 
   // Debug session data
-  console.log("Session in getUserSession:", {
-    userId: session.user.id,
-    companyId: session.user.companyId || session.user.id, // Use id as fallback
-    role: session.user.role,
-    permissions: session.user.permissions?.length || 0,
-  })
-
+  
   return {
     userId: session.user.id,
     companyId: session.user.companyId || session.user.id, // Use id as fallback if companyId is missing
@@ -51,16 +170,10 @@ export async function getCompanyName() {
 }
 // Check if user has permission
 function checkPermission(permissions: string[], requiredPermission: string) {
-  // For debugging, log the permission check
-  console.log(`Checking permission: ${requiredPermission}, User has: ${permissions.join(", ")}`)
-
   // If permissions array is empty or doesn't include the required permission, throw error
   if (!permissions.length || !permissions.includes(requiredPermission)) {
-    console.log(`Permission denied: ${requiredPermission}`)
     throw new Error("You don't have permission to perform this action")
   }
-
-  console.log(`Permission granted: ${requiredPermission}`)
 }
 
 // Ledger Actions
@@ -122,15 +235,45 @@ export async function createLedgerEntry(formData: FormData) {
       entry.paidDate = new Date()
     }
 
-    console.log("Creating ledger entry:", {
-      customerId: customerId.toString(),
-      type: entry.type,
-      amount: entry.amount,
-      companyId,
-    })
+    // Credit limit validation for "Sell" entries BEFORE creating the entry
+    if (entry.type === "Sell") {
+      // Get current customer credit settings
+      const customerSettings = await db.collection(collections.customerSettings).findOne({
+        customerId,
+        companyId,
+      })
+      
+      let currentCreditLimit = 10000 // Default
+      let currentCreditUsed = 0
+      
+      if (customerSettings) {
+        currentCreditLimit = customerSettings.creditLimit
+        currentCreditUsed = customerSettings.creditUsed || 0
+      }
+      
+      // Calculate what credit usage would be after this entry
+      const newCreditUsed = currentCreditUsed + entry.amount
+      const availableCredit = currentCreditLimit - currentCreditUsed
+      
+      if (entry.amount > availableCredit) {
+        return { 
+          success: false, 
+          error: `Credit limit exceeded. Available credit: ₹${availableCredit.toFixed(2)}, Requested: ₹${entry.amount.toFixed(2)}. Please increase credit limit or reduce the amount.`
+        }
+      }
+    }
 
     const result = await db.collection(collections.ledger).insertOne(entry)
-    console.log("Ledger entry created with ID:", result.insertedId.toString())
+
+    // Update credit limit for "Sell" entries
+    if (entry.type === "Sell") {
+      await updateCustomerCreditUsage(customerId, companyId, entry.amount)
+    }
+    
+    // Update credit limit for "Payment In" entries (restore credit)
+    if (entry.type === "Payment In") {
+      await restoreCustomerCredit(customerId, companyId, entry.amount)
+    }
 
     revalidatePath("/ledger")
     revalidatePath(`/ledger?customerId=${customerId.toString()}`)
@@ -139,6 +282,7 @@ export async function createLedgerEntry(formData: FormData) {
     return {
       success: true,
       id: customerId.toString(),
+      creditUpdated: entry.type === "Sell" || entry.type === "Payment In", // Flag to indicate credit was updated
     }
   } catch (error) {
     console.error("Failed to create ledger entry:", error)
@@ -281,9 +425,6 @@ export async function createCustomer(formData: FormData) {
     const { db } = await connectToDatabase()
     const { userId, companyId, permissions } = await getUserSession()
 
-    // For debugging
-    console.log("Creating customer with companyId:", companyId)
-
     // Check permission - but make it more lenient for now
     try {
       checkPermission(permissions, "customers_create")
@@ -306,9 +447,7 @@ export async function createCustomer(formData: FormData) {
       updatedAt: new Date(),
     }
 
-    console.log("Inserting customer:", { name: customer.name, email: customer.email, companyId })
     const result = await db.collection(collections.customers).insertOne(customer)
-    console.log("Customer inserted with ID:", result.insertedId.toString())
 
     // Create default credit settings for this customer
     const creditSettings = {
@@ -322,7 +461,6 @@ export async function createCustomer(formData: FormData) {
     }
 
     await db.collection(collections.customerSettings).insertOne(creditSettings)
-    console.log("Created default credit settings for customer:", result.insertedId.toString())
 
     revalidatePath("/customers")
 
@@ -449,9 +587,6 @@ export async function createProduct(formData: FormData) {
     const { db } = await connectToDatabase()
     const { userId, companyId, permissions } = await getUserSession()
 
-    // For debugging
-    console.log("Creating product with companyId:", companyId)
-
     // Check permission - but make it more lenient for now
     try {
       checkPermission(permissions, "products_create")
@@ -473,9 +608,7 @@ export async function createProduct(formData: FormData) {
       updatedAt: new Date(),
     }
 
-    console.log("Inserting product:", { name: product.name, sku: product.sku, companyId })
     const result = await db.collection(collections.products).insertOne(product)
-    console.log("Product inserted with ID:", result.insertedId.toString())
 
     revalidatePath("/products")
 
