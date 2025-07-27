@@ -7,7 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Package, Eye, EyeOff, Mail, Lock, User, Building, ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
-
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -110,11 +110,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-gray-50 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 dark:from-background dark:via-background dark:to-muted/10 p-4 relative overflow-hidden">
+      {/* Theme toggle in top right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
-          className="absolute -top-40 -right-40 w-96 h-96 bg-gray-100 rounded-full opacity-20"
+          className="absolute -top-40 -right-40 w-96 h-96 bg-muted/10 dark:bg-muted/5 rounded-full opacity-50"
           animate={{
             scale: [1, 1.2, 1],
             rotate: [0, -180, -360],
@@ -126,7 +130,7 @@ export default function RegisterPage() {
           }}
         />
         <motion.div
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-slate-100 rounded-full opacity-20"
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-muted/10 dark:bg-muted/5 rounded-full opacity-50"
           animate={{
             scale: [1.2, 1, 1.2],
             rotate: [-360, -180, 0],
@@ -138,7 +142,7 @@ export default function RegisterPage() {
           }}
         />
         <motion.div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gray-100 rounded-full opacity-10"
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-muted/10 dark:bg-muted/5 rounded-full opacity-30"
           animate={{
             scale: [1, 1.3, 1],
           }}
@@ -157,7 +161,7 @@ export default function RegisterPage() {
         exit="exit"
         className="relative z-10"
       >
-        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+        <Card className="w-full max-w-md shadow-2xl border bg-card/80 backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center pb-6">
             <motion.div
               variants={logoVariants}
@@ -165,7 +169,7 @@ export default function RegisterPage() {
             >
               <div className="relative">
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-gray-600 to-gray-700 rounded-full blur-xl opacity-30"
+                  className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/30 rounded-full blur-xl opacity-60"
                   animate={{
                     scale: [1, 1.2, 1],
                   }}
@@ -175,18 +179,18 @@ export default function RegisterPage() {
                     ease: "easeInOut"
                   }}
                 />
-                <div className="relative bg-gradient-to-r from-gray-700 to-gray-800 p-4 rounded-full">
-                  <Package className="h-8 w-8 text-white" />
+                <div className="relative bg-gradient-to-r from-primary to-primary/80 p-4 rounded-full">
+                  <Package className="h-8 w-8 text-primary-foreground" />
                 </div>
               </div>
             </motion.div>
             <motion.div variants={itemVariants}>
-              <CardTitle className="text-2xl font-bold text-gray-900">
+              <CardTitle className="text-2xl font-bold text-foreground">
                 Create Account
               </CardTitle>
             </motion.div>
             <motion.div variants={itemVariants}>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-muted-foreground">
                 Join us today! Create your account to get started
               </CardDescription>
             </motion.div>
@@ -195,72 +199,72 @@ export default function RegisterPage() {
           <form onSubmit={onSubmit}>
             <CardContent className="space-y-4">
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="name" className="text-sm font-medium text-foreground">
                   Full Name
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="name"
                     name="name"
                     placeholder="John Doe"
                     required
-                    className="pl-10 h-11 border-gray-200 focus:border-gray-500 focus:ring-gray-500 transition-colors"
+                    className="pl-10 h-11 bg-background text-foreground border-border focus:border-ring focus:ring-ring transition-colors placeholder:text-muted-foreground"
                   />
                 </div>
               </motion.div>
 
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="email" className="text-sm font-medium text-foreground">
                   Email Address
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     name="email"
                     type="email"
                     placeholder="name@example.com"
                     required
-                    className="pl-10 h-11 border-gray-200 focus:border-gray-500 focus:ring-gray-500 transition-colors"
+                    className="pl-10 h-11 bg-background text-foreground border-border focus:border-ring focus:ring-ring transition-colors placeholder:text-muted-foreground"
                   />
                 </div>
               </motion.div>
 
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="companyName" className="text-sm font-medium text-foreground">
                   Company Name
                 </Label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="companyName"
                     name="companyName"
                     placeholder="Acme Inc."
                     required
-                    className="pl-10 h-11 border-gray-200 focus:border-gray-500 focus:ring-gray-500 transition-colors"
+                    className="pl-10 h-11 bg-background text-foreground border-border focus:border-ring focus:ring-ring transition-colors placeholder:text-muted-foreground"
                   />
                 </div>
               </motion.div>
 
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="Enter your password"
-                    className="pl-10 pr-12 h-11 border-gray-200 focus:border-gray-500 focus:ring-gray-500 transition-colors"
+                    className="pl-10 pr-12 h-11 bg-background text-foreground border-border focus:border-ring focus:ring-ring transition-colors placeholder:text-muted-foreground"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -272,14 +276,14 @@ export default function RegisterPage() {
               <motion.div variants={itemVariants} className="w-full">
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white font-medium transition-all duration-200 transform hover:scale-[1.02]"
+                  className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all duration-200 transform hover:scale-[1.02]"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                      className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"
                     />
                   ) : (
                     <span className="flex items-center justify-center gap-2">
@@ -290,11 +294,11 @@ export default function RegisterPage() {
                 </Button>
               </motion.div>
 
-              <motion.div variants={itemVariants} className="text-center text-sm text-gray-600">
+              <motion.div variants={itemVariants} className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link 
                   href="/auth/login" 
-                  className="text-gray-900 hover:text-gray-700 font-medium hover:underline transition-colors"
+                  className="text-foreground hover:text-foreground/80 font-medium hover:underline transition-colors"
                 >
                   Sign in
                 </Link>
