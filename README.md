@@ -106,42 +106,157 @@ graph TB
 ## 🛠️ Installation
 
 ### Prerequisites
-- Node.js 18.x or higher
-- MongoDB Atlas account
-- Google OAuth credentials (for authentication)
-- Email service provider (e.g., SendGrid, Nodemailer)
 
-### Steps
-1. **Clone the Repository**
+Before setting up the Product Ledger Management System, ensure you have the following:
+
+#### System Requirements
+- **Node.js** 18.x or higher ([Download here](https://nodejs.org/))
+- **npm** or **yarn** package manager
+- **Git** for version control
+
+#### External Services
+- **MongoDB Atlas Account** - For cloud database hosting
+  - Create a free account at [MongoDB Atlas](https://www.mongodb.com/atlas)
+  - Set up a new cluster and obtain connection URI
+- **Google OAuth Credentials** - For authentication
+  - Visit [Google Cloud Console](https://console.cloud.google.com/)
+  - Create a new project or select existing one
+  - Enable Google+ API
+  - Create OAuth 2.0 credentials
+- **Email Service Provider** - For notifications and password reset
+  - Gmail SMTP (recommended for development)
+  - SendGrid, Nodemailer, or similar service for production
+
+### Setup Instructions
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/vishalmaurya850/Product-Ledger.git
+cd Product-Ledger
+```
+
+#### 2. Install Dependencies
+```bash
+npm install
+```
+
+> **⚠️ Note: React Version Compatibility**
+> 
+> If you encounter dependency conflicts or the installation fails, you may need to downgrade to React 18:
+> 
+> ```bash
+> # Remove existing node_modules and package-lock.json
+> rm -rf node_modules package-lock.json
+> 
+> # Install React 18 specifically
+> npm install react@18 react-dom@18
+> 
+> # Install remaining dependencies
+> npm install
+> ```
+> 
+> This is a known compatibility issue with some packages that haven't been updated for React 19 yet.
+
+#### 3. Configure MongoDB Atlas
+1. Create a new cluster in MongoDB Atlas
+2. Create a database user with read/write permissions
+3. Whitelist your IP address (or use 0.0.0.0/0 for development)
+4. Get your connection string from the "Connect" button
+
+#### 4. Set Up Google OAuth
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Navigate to "APIs & Services" > "Credentials"
+4. Click "Create Credentials" > "OAuth 2.0 Client IDs"
+5. Set authorized redirect URIs:
+   - Development: `http://localhost:3000/api/auth/callback/google`
+   - Production: `https://yourdomain.com/api/auth/callback/google`
+
+#### 5. Configure Environment Variables
+Create a `.env.local` file in the root directory:
+
+```env
+# Database Configuration
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
+MONGODB_DB=product_ledger
+
+# Authentication
+NEXTAUTH_SECRET=your-secret-key-here
+NEXTAUTH_URL=http://localhost:3000
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# Email Configuration (Gmail SMTP)
+EMAIL_SERVER_HOST=smtp.gmail.com
+EMAIL_SERVER_PORT=587
+EMAIL_SERVER_USER=your-email@gmail.com
+EMAIL_SERVER_PASSWORD=your-app-password
+EMAIL_FROM=your-email@gmail.com
+# Email Configuration (Gmail SMTP)
+EMAIL_SERVER_HOST=smtp.gmail.com
+EMAIL_SERVER_PORT=587
+EMAIL_SERVER_USER=your-email@gmail.com
+EMAIL_SERVER_PASSWORD=your-app-password
+EMAIL_FROM=your-email@gmail.com
+```
+
+> **📧 Gmail SMTP Setup:**
+> 1. Enable 2-factor authentication on your Gmail account
+> 2. Generate an App Password: Google Account → Security → App passwords
+> 3. Use the generated App Password (not your regular password) for EMAIL_SERVER_PASSWORD
+
+#### 6. Initialize Database
+The application will automatically create the necessary database collections on first run. Ensure your MongoDB Atlas cluster is running and accessible.
+
+#### 7. Run the Application
+```bash
+# Development mode
+npm run dev
+
+# Production build
+npm run build
+npm start
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
+
+### Verification
+
+After setup, you should be able to:
+- ✅ Access the application at `http://localhost:3000`
+- ✅ Sign in using Google OAuth
+- ✅ See the dashboard with default data
+- ✅ Receive email notifications (test with password reset)
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **MongoDB Connection Failed**
+   - Verify your connection string in `.env.local`
+   - Check IP whitelist in MongoDB Atlas
+   - Ensure database user has proper permissions
+
+2. **Google OAuth Not Working**
+   - Verify redirect URIs in Google Cloud Console
+   - Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+   - Ensure Google+ API is enabled
+
+3. **Email Notifications Not Sending**
+   - Verify Gmail App Password setup
+   - Check firewall/network restrictions on port 587
+   - Test with a different email provider if needed
+
+4. **Port Already in Use**
    ```bash
-   git clone https://github.com/your-repo/product-ledger.git
-   cd product-ledger
+   # Kill process on port 3000
+   npx kill-port 3000
+   
+   # Or run on different port
+   npm run dev -- -p 3001
    ```
-
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set Up Environment Variables**
-   Create a `.env.local` file in the root directory and add the following:
-   ```env
-   MONGODB_URI=MONGODB CONNECTION URI
-   MONGODB_DB=Database name
-   NEXTAUTH_SECRET=secret key
-   NEXTAUTH_URL=https://product-ledger.vercel.app/
-   EMAIL_SERVER_HOST=smtp.gmail.com
-   EMAIL_SERVER_PORT=587
-   EMAIL_SERVER_USER=user mail-id
-   EMAIL_SERVER_PASSWORD=google generated password 
-   EMAIL_FROM=From mail-id
-   ```
-
-4. **Run the Application**
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:3000` in your browser.
 
 ---
 
