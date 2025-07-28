@@ -1,5 +1,5 @@
 'use client';
-
+import "../../styles/globals.css"; // Ensure global styles are imported
 import { BarChart3, CreditCard, DollarSign, Package, Settings, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
