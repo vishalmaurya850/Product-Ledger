@@ -34,15 +34,26 @@ export function LandingNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+    setIsMobileMenuOpen(false);
+  };
+
   const handleLogoClick = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setIsMobileMenuOpen(false);
   };
 
   const navLinks = [
-    { href: "#features", label: "Features" },
-    { href: "#testimonials", label: "Testimonials" },
-    { href: "#pricing", label: "Pricing" },
+    { id: "features", label: "Features" },
+    { id: "testimonials", label: "Testimonials" },
+    { id: "pricing", label: "Pricing" },
   ];
 
   return (
@@ -68,11 +79,11 @@ export function LandingNavbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
+            <button
+              key={link.id}
+              onClick={() => scrollToSection(link.id)}
               className={`text-sm font-medium transition-all duration-300 relative group ${
-                activeSection === link.href.slice(1)
+                activeSection === link.id
                   ? "text-primary"
                   : "hover:text-primary"
               }`}
@@ -80,12 +91,12 @@ export function LandingNavbar() {
               <span className="relative z-10">{link.label}</span>
               <span
                 className={`absolute inset-x-0 -bottom-1 h-0.5 bg-primary transition-all duration-300 ${
-                  activeSection === link.href.slice(1)
+                  activeSection === link.id
                     ? "scale-x-100"
                     : "scale-x-0 group-hover:scale-x-100"
                 }`}
               ></span>
-            </Link>
+            </button>
           ))}
         </nav>
 
@@ -126,14 +137,13 @@ export function LandingNavbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-md shadow-md px-4 pb-6 pt-2 space-y-3">
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-sm font-medium text-foreground hover:text-primary transition-all"
+            <button
+              key={link.id}
+              onClick={() => scrollToSection(link.id)}
+              className="block text-sm font-medium text-foreground hover:text-primary transition-all text-left w-full py-2"
             >
               {link.label}
-            </Link>
+            </button>
           ))}
 
           {/* Auth & Theme Section */}
