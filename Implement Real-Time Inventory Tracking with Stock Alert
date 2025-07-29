@@ -1,0 +1,90 @@
+ 📦 Feature: Real-Time Inventory Tracking with Alert
+Added:
+- Real-time stock update API on product sale/addition
+- Low-stock threshold alert system (console + socket)
+- Admin-settable thresholds per product
+- Polling-based inventory dashboard with status badge
+- Tailwind-styled responsive UI
+
+
+const Product = require("../models/Product");
+
+// Update stock in real-time
+exports.updateStock = async (req, res) => {
+  const { productId, change } = req.body; // change = +1 for add, -1 for sale
+  const product = await Product.findOne({ productId });
+  if (!product) return res.status(404).json({ error: "Product not found" });
+
+  product.stock += change;
+  product.lastUpdated = new Date();
+
+  if (product.stock <= product.threshold) {
+    // Send alert
+    sendStockAlert(product);
+  }
+
+  await product.save();
+  res.json({ success: true, updatedStock: product.stock });
+};
+
+// Helper
+function sendStockAlert(product) {
+  console.log(`⚠️ ALERT: ${product.name} stock is low! Current: ${product.stock}`);
+  // Optional: Send email or socket alert
+}
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+export default function InventoryDashboard() {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    fetchInventory();
+    const interval = setInterval(fetchInventory, 5000); // Polling every 5 sec
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchInventory = async () => {
+    const { data } = await axios.get("/api/products");
+    setProducts(data);
+  };
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4">📦 Inventory Dashboard</h2>
+      <table className="w-full table-auto border-collapse bg-white shadow-md rounded-lg overflow-hidden">
+        <thead className="bg-gray-100 text-left">
+          <tr>
+            <th className="p-3">Product</th>
+            <th className="p-3">Stock</th>
+            <th className="p-3">Threshold</th>
+            <th className="p-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map(p => (
+            <tr key={p.productId} className="border-t">
+              <td className="p-3">{p.name}</td>
+              <td className="p-3">{p.stock}</td>
+              <td className="p-3">{p.threshold}</td>
+              <td className={`p-3 font-semibold ${p.stock <= p.threshold ? "text-red-600" : "text-green-600"}`}>
+                {p.stock <= p.threshold ? "Low Stock" : "OK"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+// server-side
+io.on("connection", socket => {
+  console.log("🟢 Client connected");
+  socket.on("disconnect", () => console.log("🔴 Disconnected"));
+});
+
+// call this inside sendStockAlert()
+io.emit("stockAlert", {
+  productId: product.productId,
+  name: product.name,
+  
