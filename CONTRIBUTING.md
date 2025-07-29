@@ -38,37 +38,39 @@ We welcome contributions of **all kinds**! Here’s how you can help:
 
 ### 1. Fork and Clone
 
-\`\`\`bash
+```bash
 git clone https://github.com/YOUR_USERNAME/Product-Ledger.git
 cd Product-Ledger
-\`\`\`
+```
 
-### 2. Install Dependencies
+### 2. Install Dependencies (use pnpm)
 
-\`\`\`bash
-npm install
-\`\`\`
+```bash
+pnpm install
+```
 
 ### 3. Create Environment File
 
-\`\`\`bash
+```bash
 cp .env.local.example .env.local
-\`\`\`
+```
 
 Edit `.env.local` with your credentials:
 
-\`\`\`env
+```env
 MONGODB_URI=your_mongodb_uri
 NEXTAUTH_SECRET=your_nextauth_secret
 EMAIL_SERVER_USER=your_email
 EMAIL_SERVER_PASSWORD=your_generated_password
-\`\`\`
+```
+
+> ℹ️ If `.env.local.example` is missing, you can create `.env.local` manually using the structure above.
 
 ### 4. Start Development Server
 
-\`\`\`bash
-npm run dev
-\`\`\`
+```bash
+pnpm dev
+```
 
 Visit `http://localhost:3000` 🚀
 
@@ -76,7 +78,7 @@ Visit `http://localhost:3000` 🚀
 
 ## 📁 Project Structure (Quick Overview)
 
-\`\`\`
+```
 product-ledger/
 ├── app/            # Next.js App Router
 ├── components/     # Reusable UI components
@@ -85,7 +87,7 @@ product-ledger/
 ├── styles/         # Tailwind CSS + global styles
 ├── types/          # TypeScript types
 └── utils/          # Helpers and utility logic
-\`\`\`
+```
 
 ---
 
@@ -93,24 +95,24 @@ product-ledger/
 
 1. **Create a New Branch**
 
-   \`\`\`bash
+   ```bash
    git checkout -b feat/your-feature-name
-   \`\`\`
+   ```
 
 2. **Make Your Changes** ✅
 
 3. **Stage + Commit**
 
-   \`\`\`bash
+   ```bash
    git add .
    git commit -m "feat: meaningful description"
-   \`\`\`
+   ```
 
 4. **Push to Your Fork**
 
-   \`\`\`bash
+   ```bash
    git push origin feat/your-feature-name
-   \`\`\`
+   ```
 
 5. **Open a Pull Request**
 
@@ -122,32 +124,34 @@ product-ledger/
 
 We follow the **Conventional Commits** format:
 
-\`\`\`
+```
 <type>: <short summary>
-\`\`\`
+```
 
 ### Allowed types:
 
-- \`feat\`: New feature
-- \`fix\`: Bug fix
-- \`docs\`: Documentation changes
-- \`style\`: Format/white-space only
-- \`refactor\`: Refactor without new feature/bug fix
-- \`test\`: Add or modify tests
-- \`chore\`: Other maintenance tasks
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code formatting, whitespace (no logic changes)
+- `refactor`: Code refactoring without behavior change
+- `test`: Add or update tests
+- `chore`: Build tasks, dependencies, or other maintenance
 
-**Examples**:
-- \`feat: add overdue interest calculation\`
-- \`fix: resolve auth redirect bug\`
-- \`docs: update README with env setup\`
+### 🔧 Examples:
+
+- `feat: add overdue interest calculation`
+- `fix: resolve auth redirect bug`
+- `docs: update README with env setup`
+- `style: adjust spacing in ledger table`
 
 ---
 
 ## 📑 Code Guidelines
 
 - Write clean, modular, and readable code.
-- Use \`TypeScript\` for type safety.
-- Use \`shadcn/ui\` and \`Tailwind CSS\` for UI components.
+- Use `TypeScript` for type safety.
+- Use `shadcn/ui` and `Tailwind CSS` for UI components.
 - Follow Prettier and ESLint rules.
 - Make sure your changes don’t break the existing codebase.
 - Write comments where necessary, especially for complex logic.
@@ -156,10 +160,11 @@ We follow the **Conventional Commits** format:
 
 ## ✅ Before You Submit
 
-- [ ] Run \`npm run lint\` — fix linting issues.
-- [ ] Run \`npm run dev\` and test your changes locally.
+- [ ] Run `pnpm lint` — fix linting issues.
+- [ ] Run `pnpm format` (if available) — apply Prettier formatting.
+- [ ] Run `pnpm dev` and test your changes locally.
 - [ ] Add screenshots/gifs if your PR changes the UI.
-- [ ] Link related issues using \`Closes #issue-no\`.
+- [ ] Link related issues using `Closes #issue-no`.
 - [ ] Fill out the PR template clearly and concisely.
 
 ---
