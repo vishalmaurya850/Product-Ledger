@@ -21,6 +21,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 
 export function TopNav({ companyName }: { companyName?: string | null }) {
   const [isMounted, setIsMounted] = useState(false)
+  const [open, setOpen] = useState(false)
   const { data: session } = useSession()
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function TopNav({ companyName }: { companyName?: string | null }) {
 
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
-      <Sheet>
+      <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
@@ -41,7 +42,7 @@ export function TopNav({ companyName }: { companyName?: string | null }) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
-          <MobileSideNav />
+          <MobileSideNav closeMenu={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
 
@@ -87,7 +88,7 @@ export function TopNav({ companyName }: { companyName?: string | null }) {
   )
 }
 
-function MobileSideNav() {
+function MobileSideNav({closeMenu} : {closeMenu: () => void}) {
   const pathname = usePathname()
   const { data: session } = useSession()
 
@@ -113,6 +114,7 @@ function MobileSideNav() {
             <Link
               key={index}
               href={item.href}
+              onClick={closeMenu}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
                 pathname === item.href || pathname.startsWith(`${item.href}/`)
