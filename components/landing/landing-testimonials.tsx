@@ -80,7 +80,7 @@ export function LandingTestimonials() {
                       {testimonial.title}
                     </CardDescription>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {testimonial.date.toLocaleDateString()}
+                      {`${testimonial.date.getMonth() + 1}/${testimonial.date.getDate()}/${testimonial.date.getFullYear()}`}
                     </p>
                   
                   
