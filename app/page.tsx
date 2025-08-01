@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingFeatures } from "@/components/landing/landing-features"
 import { LandingTestimonials } from "@/components/landing/landing-testimonials"
+import { LandingFeedbackDashboard } from "@/components/landing/landing-feedback-dashboard"
 import { LandingPricing } from "@/components/landing/landing-pricing"
 import { LandingFooter } from "@/components/landing/landing-footer"
 import { LandingNavbar } from "@/components/landing/landing-navbar"
@@ -24,6 +25,7 @@ export default async function HomePage() {
           <LandingHero />
           <LandingFeatures />
           <LandingTestimonials />
+          <LandingFeedbackDashboard />
           <LandingPricing />
         </main>
         <LandingFooter />
@@ -93,7 +95,7 @@ export default async function HomePage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Link href="/reports">
           <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
             <CardHeader>
@@ -106,6 +108,24 @@ export default async function HomePage() {
             <CardFooter>
               <Button variant="ghost" className="w-full">
                 View Reports
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </Link>
+
+        <Link href="/feedback">
+          <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
+            <CardHeader>
+              <CardTitle>Feedback Analytics</CardTitle>
+              <CardDescription>Track and analyze user feedback</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Monitor feedback trends and user satisfaction</p>
+            </CardContent>
+            <CardFooter>
+              <Button variant="ghost" className="w-full">
+                View Analytics
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
