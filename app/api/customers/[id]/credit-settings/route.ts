@@ -7,9 +7,11 @@ import { ObjectId } from "mongodb"
 export const dynamic = "force-dynamic" // Disable caching
 
 // GET credit settings for a customer
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const resolvedParams = await params;
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) {
@@ -17,11 +19,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const companyId = session.user.companyId || session.user.id
-    const customerId = resolvedParams.id
+    const customerId = params.id
 
-    const { db } = await connectToDatabase()
-
-    // Validate customerId is a valid ObjectId
+    // Validate ObjectId
     let customerObjectId
     try {
       customerObjectId = new ObjectId(customerId)
@@ -29,25 +29,27 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Invalid customer ID format" }, { status: 400 })
     }
 
-    // Get customer credit settings
+    const { db } = await connectToDatabase()
+
     const creditSettings = await db.collection(collections.customerSettings).findOne({
       customerId: customerObjectId,
       companyId,
     })
 
-    // Return default settings if none found
     if (!creditSettings) {
       return NextResponse.json({
         creditLimit: 10000,
         gracePeriod: 30,
         interestRate: 18,
+        fineAmount: 0,
       })
     }
 
     return NextResponse.json({
-      creditLimit: creditSettings.creditLimit || 10000,
-      gracePeriod: creditSettings.gracePeriod || 30,
-      interestRate: creditSettings.interestRate || 18,
+      creditLimit: creditSettings.creditLimit ?? 10000,
+      gracePeriod: creditSettings.gracePeriod ?? 30,
+      interestRate: creditSettings.interestRate ?? 18,
+      fineAmount: creditSettings.fineAmount ?? 0,
     })
   } catch (error) {
     console.error("Failed to fetch customer credit settings:", error)
@@ -56,9 +58,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 }
 
 // PUT update credit settings for a customer
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const resolvedParams = await params;
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) {
@@ -66,9 +70,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const companyId = session.user.companyId || session.user.id
-    const customerId = resolvedParams.id
+    const customerId = params.id
 
-    // Validate customerId is a valid ObjectId
+    // Validate ObjectId
     let customerObjectId
     try {
       customerObjectId = new ObjectId(customerId)
@@ -76,43 +80,53 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Invalid customer ID format" }, { status: 400 })
     }
 
-    // Parse request body
     const body = await request.json()
 
     // Validate required fields
-    if (body.creditLimit === undefined || body.gracePeriod === undefined || body.interestRate === undefined) {
+    const { creditLimit, gracePeriod, interestRate, fineAmount } = body
+    if (
+      creditLimit === undefined ||
+      gracePeriod === undefined ||
+      interestRate === undefined
+    ) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // const { db } = await connectToDatabase()
+    const { db } = await connectToDatabase()
 
-    // Update or create credit settings
-    // const result = await db.collection(collections.customerSettings).updateOne(
-    //   {
-    //     customerId: customerObjectId,
-    //     companyId,
-    //   },
-    //   {
-    //     $set: {
-    //       creditLimit: Number(body.creditLimit),
-    //       gracePeriod: Number(body.gracePeriod),
-    //       interestRate: Number(body.interestRate),
-    //       updatedAt: new Date(),
-    //     },
-    //     $setOnInsert: {
-    //       customerId: customerObjectId,
-    //       companyId,
-    //       createdAt: new Date(),
-    //     },
-    //   },
-    //   { upsert: true },
-    // )
+    await db.collection(collections.customerSettings).updateOne(
+      {
+        customerId: customerObjectId,
+        companyId,
+      },
+      {
+        $set: {
+          creditLimit: Number(creditLimit),
+          gracePeriod: Number(gracePeriod),
+          interestRate: Number(interestRate),
+          fineAmount:
+            typeof fineAmount === "number" && isFinite(fineAmount) && fineAmount >= 0
+              ? fineAmount
+              : 0,
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          customerId: customerObjectId,
+          companyId,
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true }
+    )
 
-    // Return updated settings
     return NextResponse.json({
-      creditLimit: Number(body.creditLimit),
-      gracePeriod: Number(body.gracePeriod),
-      interestRate: Number(body.interestRate),
+      creditLimit: Number(creditLimit),
+      gracePeriod: Number(gracePeriod),
+      interestRate: Number(interestRate),
+      fineAmount:
+        typeof fineAmount === "number" && isFinite(fineAmount) && fineAmount >= 0
+          ? fineAmount
+          : 0,
     })
   } catch (error) {
     console.error("Failed to update customer credit settings:", error)
