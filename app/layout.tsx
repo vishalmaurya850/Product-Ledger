@@ -32,7 +32,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {isAuthenticated ? (
               <div className="flex min-h-screen flex-col">
                 <TopNav companyName={companyName} />
