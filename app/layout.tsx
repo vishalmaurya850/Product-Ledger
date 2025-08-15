@@ -1,16 +1,17 @@
-import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import type React from "react"
 import "./globals.css"
 
-import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/components/auth-provider"
+import { ScrollToTop } from '@/components/scroll-to-top'
 import { SideNav } from "@/components/side-nav"
+import { ThemeProvider } from "@/components/theme-provider"
 import { TopNav } from "@/components/top-nav"
 import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from "@/components/auth-provider"
-import { getCompanyName } from "@/lib/actions";
-import { getServerSession } from "next-auth"
+import { getCompanyName } from "@/lib/actions"
 import { authOptions } from "@/lib/auth"
+import { getServerSession } from "next-auth"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -45,6 +46,7 @@ export default async function RootLayout({
               <main>{children}</main>
             )}
             <Toaster />
+            <ScrollToTop />
           </ThemeProvider>
         </AuthProvider>
       </body>
