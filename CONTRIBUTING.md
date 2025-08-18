@@ -173,7 +173,6 @@ We follow the **Conventional Commits** format:
 
 We are here to support you! ✨
 
-- 📧 Email: [bonsoisystems@gmail.com](mailto:bonsoisystems@gmail.com)
 - 🐛 Report Issues: [GitHub Issues](https://github.com/vishalmaurya850/Product-Ledger/issues)
 - 💡 Suggest Features: [Open a Discussion](https://github.com/vishalmaurya850/Product-Ledger/discussions)
 
