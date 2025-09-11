@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SideNav } from "@/components/side-nav"
 import { TopNav } from "@/components/top-nav"
 import { Toaster } from "@/components/ui/toaster"
+import { ScrollToTop } from "@/components/ui/scroll-to-top"
 import { AuthProvider } from "@/components/auth-provider"
 import { getCompanyName } from "@/lib/actions";
 import { getServerSession } from "next-auth"
@@ -45,6 +46,7 @@ export default async function RootLayout({
               <main>{children}</main>
             )}
             <Toaster />
+            <ScrollToTop />
           </ThemeProvider>
         </AuthProvider>
       </body>
