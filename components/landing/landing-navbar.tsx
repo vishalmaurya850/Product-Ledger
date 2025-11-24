@@ -159,8 +159,4 @@ export function LandingNavbar() {
       )}
     </header>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
