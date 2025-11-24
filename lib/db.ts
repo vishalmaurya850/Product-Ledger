@@ -15,7 +15,6 @@ export const db = globalThis.prisma || new PrismaClient({ adapter })
 
 if (process.env.NODE_ENV !== "production") globalThis.prisma = db
 
-<<<<<<< HEAD
 // Export Prisma types
 export type {
   LedgerEntry,
@@ -27,36 +26,6 @@ export type {
   Permission,
   PasswordReset
 } from "@prisma/client"
-=======
-// Schema for a ledger entry
-export interface LedgerEntry {
-  _id?: ObjectId
-  customerId: ObjectId
-  type: "Sell" | "Payment In" | "Payment Out" | "Partial Payment"
-  invoiceNumber: string
-  amount: number
-  currency: string
-  date: Date
-  product?: string
-  description: string
-  status: "Paid" | "Unpaid" | "Overdue"
-  paidDate?: Date
-  daysCount?: number
-  notes?: string
-  createdAt: Date
-  updatedAt: Date
-  companyId: string
-  createdBy: string
-  // Partial payment fields
-  partiallyPaid?: boolean
-  partialPaymentAmount?: number
-  partialPaymentDate?: Date
-  remainingAmount?: number
-  paidInterest?: number
-  relatedEntryId?: ObjectId
-  partialPaymentId?: ObjectId
-}
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
 
 // Available permissions for the application
 export const availablePermissions = [

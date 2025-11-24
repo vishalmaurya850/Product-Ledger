@@ -13,6 +13,7 @@ export function CreditSettingsReport() {
     creditLimit: 10000,
     gracePeriod: 30,
     interestRate: 18,
+    fineAmount: 0,
   })
   const [customerSettings, setCustomerSettings] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -134,8 +135,8 @@ export function CreditSettingsReport() {
           />
         ) : (
           <Card>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-3 gap-4">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Default Credit Limit</p>
                   <p className="text-lg font-medium">₹{companySettings.creditLimit.toFixed(2)}</p>
@@ -147,6 +148,10 @@ export function CreditSettingsReport() {
                 <div>
                   <p className="text-sm text-muted-foreground">Interest Rate</p>
                   <p className="text-lg font-medium">{companySettings.interestRate}% per annum</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Fine Amount</p>
+                  <p className="text-lg font-medium">₹{companySettings.fineAmount.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>

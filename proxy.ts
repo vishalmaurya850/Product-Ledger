@@ -7,11 +7,7 @@ export default auth((req) => {
   const session = req.auth
 
   // Public paths that don't require authentication
-<<<<<<< HEAD:proxy.ts
   const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password","/privacy", "/terms", "/cookie", "/about", "/blog", "/careers", "/contact", "/features","/pricing","/changelog","/roadmap"]
-=======
-  const publicPaths = ["/","/cookie","/policy","/terms", "/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"]
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3:middleware.ts
   if (publicPaths.includes(pathname) || publicPaths.some((path) => pathname.startsWith(`${path}/`))) {
     return NextResponse.next()
   }

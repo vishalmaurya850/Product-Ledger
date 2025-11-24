@@ -19,7 +19,7 @@ const formSchema = z.object({
   gracePeriod: z.coerce.number().int().min(0, { message: "Grace period must be a positive integer" }),
   interestRate: z.coerce.number().min(0, { message: "Interest rate must be a positive number" }),
   compoundingPeriod: z.enum(["daily", "weekly", "monthly"], {
-    required_error: "Please select a compounding period",
+    message: "Please select a compounding period",
   }),
   minimumFee: z.coerce.number().min(0, { message: "Minimum fee must be a positive number" }),
 })
@@ -81,9 +81,11 @@ export default function SettingsPage() {
                 body: formData,
               });
               if (!response.ok) {
-                return { success: false, error: "Failed to update settings" };
+                const data = await response.json().catch(() => ({}));
+                return { success: false, error: "Failed to update settings", unauthorized: response.status === 401 };
               }
-              return { success: true };
+              const data = await response.json().catch(() => ({}));
+              return { success: true, message: data.message };
             };
       
             const result = await updateOverdueSettings(formData)

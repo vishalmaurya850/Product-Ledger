@@ -9,12 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-<<<<<<< HEAD
-import { toast } from "@/hooks/use-toast"
-=======
 import { toast } from "@/components/ui/use-toast"
 import { ThemeToggle } from "@/components/theme-toggle"
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)

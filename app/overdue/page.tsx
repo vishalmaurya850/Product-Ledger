@@ -33,6 +33,7 @@ export default function OverduePage() {
     creditLimit: 10000,
     gracePeriod: 30,
     interestRate: 18,
+    fineAmount: 0,
   })
 
   const fetchOverdueEntries = async () => {

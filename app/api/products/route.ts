@@ -45,6 +45,8 @@ export async function POST(request: Request) {
         stock: Number(data.stock),
         unit: data.unit,
         imageUrl: data.imageUrl,
+        sku: data.sku,
+        category: data.category,
         companyId,
         createdBy: userId,
       }

@@ -27,11 +27,7 @@ export function LandingFooter() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/features" 
-=======
-                  href="#features" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   Features
@@ -39,11 +35,7 @@ export function LandingFooter() {
               </li>
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/pricing" 
-=======
-                  href="#pricing" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   Pricing
@@ -51,11 +43,7 @@ export function LandingFooter() {
               </li>
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/changelog" 
-=======
-                  href="#" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   Changelog
@@ -63,11 +51,7 @@ export function LandingFooter() {
               </li>
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/roadmap" 
-=======
-                  href="#" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   Roadmap
@@ -83,11 +67,7 @@ export function LandingFooter() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/about" 
-=======
-                  href="#" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   About
@@ -95,11 +75,7 @@ export function LandingFooter() {
               </li>
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/blog" 
-=======
-                  href="#" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   Blog
@@ -107,11 +83,7 @@ export function LandingFooter() {
               </li>
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/careers" 
-=======
-                  href="#" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   Careers
@@ -119,11 +91,7 @@ export function LandingFooter() {
               </li>
               <li>
                 <Link 
-<<<<<<< HEAD
                   href="/contact" 
-=======
-                  href="#" 
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
                   Contact
@@ -138,38 +106,26 @@ export function LandingFooter() {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
-<<<<<<< HEAD
                 <Link 
                   href="/privacy" 
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
-=======
-                <Link href="/policy" className="text-muted-foreground hover:text-foreground">
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   Privacy Policy
                 </Link>
               </li>
               <li>
-<<<<<<< HEAD
                 <Link 
                   href="/terms" 
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
-=======
-                <Link href="/terms" className="text-muted-foreground hover:text-foreground">
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   Terms of Service
                 </Link>
               </li>
               <li>
-<<<<<<< HEAD
                 <Link 
                   href="/cookie" 
                   className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
                 >
-=======
-                <Link href="/cookie" className="text-muted-foreground hover:text-foreground">
->>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
                   Cookie Policy
                 </Link>
               </li>
