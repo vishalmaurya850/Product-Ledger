@@ -82,6 +82,7 @@ export async function createLedgerEntry(formData: FormData) {
 
     const customerId = formData.get("customerId") as string
 
+<<<<<<< HEAD
     const type = formData.get("type") as string
     const status = type === "Sell" ? "Unpaid" : "Paid"
     const date = new Date(formData.get("date") as string)
@@ -89,6 +90,41 @@ export async function createLedgerEntry(formData: FormData) {
     let paidDate: Date | null = null
     if (status === "Paid") {
       paidDate = new Date()
+=======
+    const entry: {
+      customerId: ObjectId
+      type: "Sell" | "Payment In" | "Payment Out"
+      invoiceNumber: string
+      date: Date
+      description: string
+      amount: number
+      currency: string
+      status: string
+      product?: string
+      notes?: string
+      daysCount: number
+      companyId: string
+      createdBy: string
+      createdAt: Date
+      updatedAt: Date
+      paidDate?: Date // Added paidDate property
+    } = {
+      customerId,
+      type: formData.get("type") as "Sell" | "Payment In" | "Payment Out",
+      invoiceNumber,
+      date: new Date(formData.get("date") as string),
+      description: formData.get("description") as string,
+      amount: Number.parseFloat(formData.get("amount") as string),
+      currency: (formData.get("currency") as string),
+      status: formData.get("type") === "Sell" ? "Unpaid" : "Paid",
+      product: (formData.get("product") as string) || undefined,
+      notes: (formData.get("notes") as string) || undefined,
+      daysCount: 0,
+      companyId,
+      createdBy: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+>>>>>>> 5d2afdf1da669018d0f5aae77b62470d7f05bce3
     }
 
     const entry = await db.ledgerEntry.create({

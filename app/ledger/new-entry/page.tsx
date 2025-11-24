@@ -17,6 +17,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { createLedgerEntry } from "@/lib/actions"
+import { currencyOptions } from "@/utils/constant"
 
 export default function NewLedgerEntryPage() {
   const router = useRouter()
@@ -30,6 +31,7 @@ export default function NewLedgerEntryPage() {
   const [date, setDate] = useState<Date>(new Date())
   const [type, setType] = useState<string>("Sell")
   const [amount, setAmount] = useState<string>("")
+  const [currency, setCurrency] = useState<string>("INR")
   const [description, setDescription] = useState<string>("")
   const [product, setProduct] = useState<string>("")
   const [notes, setNotes] = useState<string>("")
@@ -106,6 +108,7 @@ export default function NewLedgerEntryPage() {
       formData.append("type", type)
       formData.append("date", date.toISOString())
       formData.append("amount", amount)
+      formData.append("currency", currency)
       formData.append("description", description)
 
       if (product) {
@@ -206,16 +209,30 @@ export default function NewLedgerEntryPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount (₹)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  required
-                />
+                <Label htmlFor="amount">Amount</Label>
+                <div className="flex items-center space-x-2">
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencyOptions.map((option) => (
+                        <SelectItem key={option.code} value={option.code}>
+                          {option.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

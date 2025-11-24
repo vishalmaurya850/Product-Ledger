@@ -45,6 +45,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { InlineCreditSettings } from "@/components/ledger/credit-limit-settings"
+import { getCurrencySymbol } from "@/utils/getCurrencySymbol"
 
 export interface CreditSettings {
   creditLimit: number
@@ -769,8 +770,8 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-medium">₹{entry.amount.toFixed(2)}</TableCell>
-                  <TableCell className="text-right font-medium">₹{entry.balance.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-medium">{getCurrencySymbol(entry.currency)} {entry.amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-medium">{getCurrencySymbol(entry.currency)} {entry.balance.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     {Number.parseFloat(entry.interest) > 0 ? (
                       <span className="text-red-600 font-medium">₹{entry.interest}</span>
