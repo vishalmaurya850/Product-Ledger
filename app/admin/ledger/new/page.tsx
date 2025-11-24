@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { createLedgerEntry } from "@/lib/actions"
 
@@ -42,12 +42,16 @@ export default function NewLedgerEntryPage() {
 
       if (result.success) {
         toast({
-          title: "Entry created",
-          description: "Your ledger entry has been created successfully.",
+          title: "Success",
+          description: result.message || "Ledger entry has been created successfully",
         })
         router.push("/admin/ledger")
       } else {
-        throw new Error(result.error || "Failed to create ledger entry")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to create ledger entry",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error creating ledger entry:", error)

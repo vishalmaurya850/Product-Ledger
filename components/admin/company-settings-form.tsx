@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { updateCompanySettings } from "@/lib/actions"
 import Image from "next/image"
 
@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 interface CompanySettingsFormProps {
   company: {
-    _id: string
+    id: string
     name: string
     address?: string
     phone?: string
@@ -47,6 +47,7 @@ export function CompanySettingsForm({ company, readOnly = false }: CompanySettin
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       name: company.name,
       address: company.address || "",
@@ -74,7 +75,7 @@ export function CompanySettingsForm({ company, readOnly = false }: CompanySettin
   async function uploadLogo(file: File): Promise<string> {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("id", company._id); // Add the company ID
+    formData.append("id", company.id); // Add the company ID
     formData.append("type", "company"); // Specify the type as "company"
   
     const response = await fetch("/api/upload", {
@@ -130,13 +131,18 @@ export function CompanySettingsForm({ company, readOnly = false }: CompanySettin
 
       if (result.success) {
         toast({
-          title: "Settings updated",
-          description: "Company settings have been updated successfully",
+          title: "Success",
+          description: result.message || "Company settings have been updated successfully",
         })
         router.refresh()
-      } else {
-        throw new Error(result.error || "Failed to update company settings")
+        return
       }
+      
+      toast({
+        title: result.unauthorized ? "Permission Denied" : "Error",
+        description: result.error || "Failed to update company settings",
+        variant: "destructive",
+      })
     } catch (error) {
       console.error("Error updating company settings:", error)
       toast({
@@ -149,9 +155,21 @@ export function CompanySettingsForm({ company, readOnly = false }: CompanySettin
     }
   }
 
+  function onError(errors: any) {
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ")
+    
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    })
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
         <div className="flex justify-center mb-6">
           <div className="relative">
             <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-100 border">

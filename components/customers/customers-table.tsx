@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Loader2, Search } from "lucide-react"
 import { deleteCustomer } from "@/lib/actions"
 
@@ -93,13 +93,17 @@ export function CustomersTable() {
       const result = await deleteCustomer(customerToDelete)
 
       if (result.success) {
-        setCustomers(customers.filter((customer) => customer._id !== customerToDelete))
+        setCustomers(customers.filter((customer) => customer.id !== customerToDelete))
         toast({
-          title: "Customer deleted",
-          description: "Customer has been deleted successfully",
+          title: "Success",
+          description: result.message || "Customer has been deleted successfully",
         })
       } else {
-        throw new Error(result.error || "Failed to delete customer")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to delete customer",
+          variant: "destructive",
+        })
       }
     } catch (error: any) {
       console.error("Error deleting customer:", error)
@@ -169,7 +173,7 @@ export function CustomersTable() {
       ) : (
         <div className="rounded-md border divide-y">
           {filteredCustomers.map((customer) => (
-            <div key={customer._id} className="p-4">
+            <div key={customer.id} className="p-4">
               <div className="flex items-center gap-4">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground">
                   {getInitials(customer.name)}
@@ -181,17 +185,17 @@ export function CustomersTable() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 max-sm:hidden">
-                  <Button variant="outline" size="sm" onClick={() => router.push(`/ledger?customerId=${customer._id}`)}>
+                  <Button variant="outline" size="sm" onClick={() => router.push(`/ledger?customerId=${customer.id}`)}>
                     View Ledger
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => router.push(`/customers/${customer._id}/edit`)}>
+                  <Button variant="outline" size="sm" onClick={() => router.push(`/customers/${customer.id}/edit`)}>
                     Edit
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-red-500 hover:text-red-700"
-                    onClick={() => setCustomerToDelete(customer._id)}
+                    onClick={() => setCustomerToDelete(customer.id)}
                   >
                     Delete
                   </Button>

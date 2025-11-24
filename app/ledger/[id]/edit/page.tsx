@@ -1,20 +1,16 @@
 import { notFound, redirect } from "next/navigation"
-import { connectToDatabase, collections } from "@/lib/db"
-import { ObjectId } from "mongodb"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-// import { use } from "react"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EditLedgerEntryForm } from "@/components/ledger/edit-ledger-entry-form"
 
 export default async function EditLedgerEntryPage({ params }: { params: Promise<{ id: string }> }) {
-  // Use React.use to unwrap the params promise
   const resolvedParams = await (params)
   const entryId = resolvedParams.id
 
   // Check if user is authenticated and has permission
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     redirect("/auth/login")
   }
@@ -24,40 +20,33 @@ export default async function EditLedgerEntryPage({ params }: { params: Promise<
     redirect("/ledger")
   }
 
-  // Get ledger entry details
-  const { db } = await connectToDatabase()
-  const entry = await db.collection(collections.ledger).findOne({
-    _id: new ObjectId(entryId),
-    companyId: session.user.companyId,
+  // Get ledger entry details with customer
+  const entry = await db.ledgerEntry.findUnique({
+    where: { id: entryId },
+    include: {
+      customer: true,
+    },
   })
 
-  if (!entry) {
+  if (!entry || entry.companyId !== session.user.companyId) {
     notFound()
   }
 
-  // Get customer details
-  const customer = await db.collection(collections.customers).findOne({
-    _id: new ObjectId(entry.customerId),
-    companyId: session.user.companyId,
-  })
-
-  if (!customer) {
+  if (!entry.customer) {
     notFound()
   }
 
   // Get all customers for dropdown
-  const customers = await db
-    .collection(collections.customers)
-    .find({ companyId: session.user.companyId })
-    .sort({ name: 1 })
-    .toArray()
+  const customers = await db.customer.findMany({
+    where: { companyId: session.user.companyId },
+    orderBy: { name: 'asc' },
+  })
 
   // Get all products for dropdown
-  const products = await db
-    .collection(collections.products)
-    .find({ companyId: session.user.companyId })
-    .sort({ name: 1 })
-    .toArray()
+  const products = await db.product.findMany({
+    where: { companyId: session.user.companyId },
+    orderBy: { name: 'asc' },
+  })
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">

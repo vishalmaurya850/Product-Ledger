@@ -26,7 +26,12 @@ interface InlineCreditSettingsProps {
 export function InlineCreditSettings({ customerId, initialSettings, onSettingsUpdate }: InlineCreditSettingsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [settings, setSettings] = useState<CreditSettings>(initialSettings)
+  const [settings, setSettings] = useState<CreditSettings>({
+    creditLimit: initialSettings?.creditLimit ?? 0,
+    gracePeriod: initialSettings?.gracePeriod ?? 0,
+    interestRate: initialSettings?.interestRate ?? 0,
+    fineAmount: initialSettings?.fineAmount ?? 0,
+  })
 
   const handleSave = async () => {
     setIsLoading(true)
@@ -75,7 +80,7 @@ export function InlineCreditSettings({ customerId, initialSettings, onSettingsUp
             <Input
               id="creditLimit"
               type="number"
-              value={settings.creditLimit}
+              value={settings.creditLimit ?? 0}
               onChange={(e) => setSettings({ ...settings, creditLimit: Number.parseFloat(e.target.value) || 0 })}
               className="col-span-3"
             />
@@ -87,7 +92,7 @@ export function InlineCreditSettings({ customerId, initialSettings, onSettingsUp
             <Input
               id="paymentTerms"
               type="number"
-              value={settings.gracePeriod}
+              value={settings.gracePeriod ?? 0}
               onChange={(e) => setSettings({ ...settings, gracePeriod: Number.parseInt(e.target.value) || 0 })}
               className="col-span-3"
             />
@@ -100,7 +105,7 @@ export function InlineCreditSettings({ customerId, initialSettings, onSettingsUp
               id="interestRate"
               type="number"
               step="0.01"
-              value={settings.interestRate}
+              value={settings.interestRate ?? 0}
               onChange={(e) => setSettings({ ...settings, interestRate: Number.parseFloat(e.target.value) || 0 })}
               className="col-span-3"
             />
@@ -112,7 +117,7 @@ export function InlineCreditSettings({ customerId, initialSettings, onSettingsUp
             <Input
               id="fineAmount"
               type="number"
-              value={settings.fineAmount}
+              value={settings.fineAmount ?? 0}
               onChange={(e) => setSettings({ ...settings, fineAmount: Number.parseFloat(e.target.value) || 0 })}
               className="col-span-3"
             />

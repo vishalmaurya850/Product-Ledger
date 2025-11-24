@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -18,15 +16,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     const companyId = session.user.companyId
-    const { db } = await connectToDatabase()
 
     // Get ledger entry by ID and ensure it belongs to the same company
-    const entry = await db.collection(collections.ledger).findOne({
-      _id: new ObjectId(params.id),
-      companyId,
+    const entry = await db.ledgerEntry.findUnique({
+      where: { id: params.id },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      }
     })
 
-    if (!entry) {
+    if (!entry || entry.companyId !== companyId) {
       return NextResponse.json({ error: "Ledger entry not found" }, { status: 404 })
     }
 
@@ -39,7 +43,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -51,17 +55,20 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     const companyId = session.user.companyId
-    const { db } = await connectToDatabase()
 
-    // Delete ledger entry by ID and ensure it belongs to the same company
-    const result = await db.collection(collections.ledger).deleteOne({
-      _id: new ObjectId(params.id),
-      companyId,
+    // Verify entry belongs to company before deleting
+    const existing = await db.ledgerEntry.findUnique({
+      where: { id: params.id },
+      select: { companyId: true }
     })
 
-    if (result.deletedCount === 0) {
+    if (!existing || existing.companyId !== companyId) {
       return NextResponse.json({ error: "Ledger entry not found" }, { status: 404 })
     }
+
+    await db.ledgerEntry.delete({
+      where: { id: params.id },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { connectToDatabase, collections } from "@/lib/db";
-import { ObjectId } from "mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { format } from "date-fns";
 import { ArrowLeft, Download } from "lucide-react";
 
@@ -15,31 +13,27 @@ export const dynamic = "force-dynamic"; // Disable caching for this route
 
 export default async function ViewLedgerEntryPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params; // Await the params
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.id) {
     return <div>Not authenticated</div>;
   }
 
   const companyId = session.user.companyId || session.user.id;
-  const { db } = await connectToDatabase();
 
-  // Fetch customer settings for gracePeriod
-  const customerSettings = await db.collection(collections.customerSettings).findOne({ companyId });
-  const gracePeriod = customerSettings?.gracePeriod || 7; // Default to 7 days if not found
+  // Fetch overdue settings for gracePeriod
+  const overdueSettings = await db.overdueSettings.findUnique({ where: { companyId } });
+  const gracePeriod = overdueSettings?.gracePeriod || 7; // Default to 7 days if not found
 
   console.log("Grace Period:", gracePeriod);
 
-  // Get the ledger entry
-  let entry;
-  try {
-    entry = await db.collection(collections.ledger).findOne({
-      _id: new ObjectId(resolvedParams.id), // Use resolvedParams.id
-    });
-  } catch (error) {
-    console.error("Error fetching ledger entry:", error);
-    notFound();
-  }
+  // Get the ledger entry with customer included
+  const entry = await db.ledgerEntry.findUnique({
+    where: { id: resolvedParams.id },
+    include: {
+      customer: true,
+    },
+  });
 
   if (!entry) {
     notFound();
@@ -53,29 +47,15 @@ export default async function ViewLedgerEntryPage({ params }: { params: Promise<
 
   console.log("Due date:", dueDate); // Log the due date for debugging
 
-  // Get the customer if customerId exists
-  let customer = null;
-  if (entry.customerId) {
-    try {
-      customer = await db.collection(collections.customers).findOne({
-        _id: new ObjectId(entry.customerId),
-      });
-    } catch (error) {
-      console.error("Error fetching customer:", error);
-      // Continue without customer data
-    }
-  }
-
   // Get company details
-  const company =
-    (await db.collection(collections.companies).findOne({
-      _id: new ObjectId(companyId),
-    })) || {
-      name: "Your Company",
-      address: "Company Address",
-      phone: "Phone Number",
-      email: "company@example.com",
-    };
+  const company = await db.company.findUnique({
+    where: { id: companyId },
+  }) || {
+    name: "Your Company",
+    address: "Company Address",
+    phone: "Phone Number",
+    email: "company@example.com",
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -110,12 +90,12 @@ export default async function ViewLedgerEntryPage({ params }: { params: Promise<
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-semibold mb-2">Bill To:</h3>
-              {customer ? (
+              {entry.customer ? (
                 <div>
-                  <p className="font-medium">{customer.name}</p>
-                  <p>{customer.address}</p>
-                  <p>{customer.phone}</p>
-                  <p>{customer.email}</p>
+                  <p className="font-medium">{entry.customer.name}</p>
+                  <p>{entry.customer.address}</p>
+                  <p>{entry.customer.phone}</p>
+                  <p>{entry.customer.email}</p>
                 </div>
               ) : (
                 <p className="text-muted-foreground">Customer information not available</p>

@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { ArrowRight, BarChart3, CreditCard, DollarSign, Package, ShieldCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,7 +12,7 @@ import { LandingFooter } from "@/components/landing/landing-footer"
 import { LandingNavbar } from "@/components/landing/landing-navbar"
 
 export default async function HomePage() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   // If user is not logged in, show landing page
   if (!session) {

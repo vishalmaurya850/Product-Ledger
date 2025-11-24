@@ -1,24 +1,20 @@
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { connectToDatabase, collections, availablePermissions } from "@/lib/db"
-import { ObjectId } from "mongodb"
+import { auth } from "@/lib/auth"
+import { db, availablePermissions } from "@/lib/db"
 import { format } from "date-fns"
 import { ArrowLeft, Edit, Mail, Shield, Calendar, Clock } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-// import { use } from "react"
 
 export default async function ViewUserPage({ params }: { params: Promise<{ id: string }> }) {
-  // Use React.use to unwrap the params promise
   const resolvedParams = await (params)
   const userId = resolvedParams.id
 
   // Check if user is authenticated and has permission
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     redirect("/auth/login")
   }
@@ -28,15 +24,24 @@ export default async function ViewUserPage({ params }: { params: Promise<{ id: s
     redirect("/")
   }
 
-  // Get user details
-  const { db } = await connectToDatabase()
-  const user = await db.collection(collections.users).findOne(
-    {
-      _id: new ObjectId(userId),
+  // Get user details (excluding password)
+  const user = await db.user.findUnique({
+    where: {
+      id: userId,
       companyId: session.user.companyId,
     },
-    { projection: { password: 0 } }, // Exclude password
-  )
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      companyId: true,
+      companyName: true,
+      role: true,
+      permissions: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  })
 
   if (!user) {
     notFound()

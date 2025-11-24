@@ -6,12 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { use } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -31,7 +32,8 @@ const formSchema = z.object({
   notes: z.string().optional(),
 })
 
-export default function EditCustomerPage({ params }: { params: { id: string } }) {
+export default function EditCustomerPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -40,6 +42,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       name: "",
       email: "",
@@ -56,7 +59,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
 
       // Add cache-busting timestamp
       const timestamp = new Date().getTime()
-      const response = await fetch(`/api/customers/${params.id}?t=${timestamp}`, {
+      const response = await fetch(`/api/customers/${id}?t=${timestamp}`, {
         cache: "no-store",
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -94,11 +97,22 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     fetchCustomer()
-  }, [params.id])
+  }, [id])
 
   const handleRefresh = () => {
     setIsRefreshing(true)
     fetchCustomer()
+  }
+
+  function onError(errors: any) {
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ")
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    })
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -107,7 +121,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
     try {
       console.log("Submitting customer update:", values)
 
-      const response = await fetch(`/api/customers/${params.id}`, {
+      const response = await fetch(`/api/customers/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -124,12 +138,16 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
 
       if (result.success) {
         toast({
-          title: "Customer updated",
-          description: "Customer information has been updated successfully.",
+          title: "Success",
+          description: result.message || "Customer has been updated successfully",
         })
-        router.push(`/customers/${params.id}/view`)
+        router.push(`/customers/${id}/view`)
       } else {
-        throw new Error(result.error || "Failed to update customer")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to update customer",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error updating customer:", error)
@@ -211,7 +229,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
           <CardDescription>Update your customer information</CardDescription>
         </CardHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)}>
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}

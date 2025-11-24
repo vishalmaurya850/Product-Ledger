@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { createCustomer } from "@/lib/actions"
 
@@ -33,6 +33,12 @@ export default function NewCustomerPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isLoading) {
+      console.log("Already submitting, preventing double submit")
+      return
+    }
+    
     setIsLoading(true)
 
     try {
@@ -43,15 +49,24 @@ export default function NewCustomerPage() {
 
       const result = await createCustomer(formDataObj)
 
+      console.log("Create customer result:", result)
+
       if (result.success) {
         toast({
-          title: "Customer created",
-          description: "New customer has been added successfully",
+          title: "Success",
+          description: result.message || "New customer has been added successfully",
         })
         router.push("/customers")
-      } else {
-        throw new Error(result.error || "Failed to create customer")
+        return
       }
+      
+      // Show error toast and stay on page
+      console.log("Showing error toast - unauthorized:", result.unauthorized)
+      toast({
+        title: result.unauthorized ? "Permission Denied" : "Error",
+        description: result.error || "Failed to create customer",
+        variant: "destructive",
+      })
     } catch (error) {
       console.error("Error creating customer:", error)
       toast({

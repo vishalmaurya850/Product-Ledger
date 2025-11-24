@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Loader2, Edit, Trash2, Eye, RefreshCcw, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -106,14 +106,20 @@ export function ProductsTable() {
         method: "DELETE",
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to delete product")
+        toast({
+          title: data.unauthorized ? "Permission Denied" : "Error",
+          description: data.error || "Failed to delete product",
+          variant: "destructive",
+        })
+        return
       }
 
       toast({
-        title: "Product deleted",
-        description: "The product has been deleted successfully.",
+        title: "Success",
+        description: data.message || "The product has been deleted successfully.",
       })
 
       // Refresh the products list
@@ -216,7 +222,7 @@ export function ProductsTable() {
             </TableHeader>
             <TableBody>
               {filteredProducts.map((product) => (
-                <TableRow key={product._id}>
+                <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.sku}</TableCell>
                   <TableCell>₹{product.price.toFixed(2)}</TableCell>
@@ -231,14 +237,14 @@ export function ProductsTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => router.push(`/products/${product._id}/view`)}
+                        onClick={() => router.push(`/products/${product.id}/view`)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => router.push(`/products/${product._id}/edit`)}
+                        onClick={() => router.push(`/products/${product.id}/edit`)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -258,11 +264,11 @@ export function ProductsTable() {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => handleDeleteProduct(product._id)}
-                              disabled={deletingProductId === product._id}
+                              onClick={() => handleDeleteProduct(product.id)}
+                              disabled={deletingProductId === product.id}
                               className="bg-red-600 hover:bg-red-700"
                             >
-                              {deletingProductId === product._id ? (
+                              {deletingProductId === product.id ? (
                                 <>
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                   Deleting...

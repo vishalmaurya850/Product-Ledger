@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -32,6 +32,7 @@ export default function SettingsPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       gracePeriod: 7,
       interestRate: 15,
@@ -89,11 +90,15 @@ export default function SettingsPage() {
 
       if (result.success) {
         toast({
-          title: "Settings updated",
-          description: "Your overdue settings have been updated successfully.",
+          title: "Success",
+          description: result.message || "Your overdue settings have been updated successfully.",
         })
       } else {
-        throw new Error(result.error || "Failed to update settings")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to update settings",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error updating settings:", error)
@@ -105,6 +110,18 @@ export default function SettingsPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  function onError(errors: any) {
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ")
+    
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    })
   }
 
   if (isLoading) {
@@ -142,7 +159,7 @@ export default function SettingsPage() {
               <CardDescription>Configure how overdue payments are handled</CardDescription>
             </CardHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)}>
+              <form onSubmit={form.handleSubmit(onSubmit, onError)}>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormField

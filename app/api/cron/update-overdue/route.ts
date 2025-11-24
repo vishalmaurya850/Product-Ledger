@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections, isOverdue } from "@/lib/db"
-import { ObjectId } from "mongodb"
+import { db, isOverdue } from "@/lib/db"
 
 // This route is meant to be called by a cron job to update overdue status
 export async function GET(request: Request) {
@@ -13,25 +12,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { db } = await connectToDatabase()
-
     // Get all unpaid ledger entries
-    const unpaidEntries = (await db
-      .collection(collections.ledger)
-      .find({
+    const unpaidEntries = await db.ledgerEntry.findMany({
+      where: {
         status: "Unpaid",
         type: "Sell",
-      })
-      .toArray()) as unknown as { customerId: string; date: Date; _id: string }[]
-
-    // Get customer settings for grace period
-    const customerSettings = await db.collection(collections.customerSettings).find({}).toArray()
-
-    // Create a map of customer settings for quick lookup
-    const settingsMap = new Map()
-    customerSettings.forEach((setting: { customerId: string; gracePeriod?: number }) => {
-      const typedSetting = setting
-      settingsMap.set(typedSetting.customerId.toString(), typedSetting)
+      },
+      include: {
+        customer: {
+          include: {
+            customerCreditSettings: true,
+          },
+        },
+      },
     })
 
     // Default grace period if no settings found
@@ -41,14 +34,14 @@ export async function GET(request: Request) {
     let updatedCount = 0
 
     // Update entries that are overdue
-    const updatePromises = unpaidEntries.map(async (entry: { customerId: string; date: Date; _id: string }) => {
-      const customerSetting = settingsMap.get(entry.customerId.toString())
-      const gracePeriod = customerSetting ? customerSetting.gracePeriod : defaultGracePeriod
+    const updatePromises = unpaidEntries.map(async (entry) => {
+      const gracePeriod = entry.customer?.customerCreditSettings?.[0]?.gracePeriod || defaultGracePeriod
 
       if (isOverdue(entry.date, gracePeriod)) {
-        await db
-          .collection(collections.ledger)
-          .updateOne({ _id: new ObjectId(entry._id) }, { $set: { status: "Overdue", updatedAt: new Date() } })
+        await db.ledgerEntry.update({
+          where: { id: entry.id },
+          data: { status: "Overdue" },
+        })
         updatedCount++
       }
     })

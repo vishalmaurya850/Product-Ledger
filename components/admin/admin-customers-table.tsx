@@ -1,9 +1,7 @@
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 import { format } from "date-fns"
 import { ArrowUpDown, MoreHorizontal, Mail, Phone, User } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -16,37 +14,18 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { deleteCustomer } from "@/lib/actions"
 import Link from "next/link"
-
-// Define a type for the customer object
-interface Customer {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  createdAt?: string;
-}
-
 export async function AdminCustomersTable() {
   // Get user session
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     return <div>Not authenticated</div>
   }
-
   const companyId = session.user.id
-
-  // Fetch real data from MongoDB
-  const { db } = await connectToDatabase()
-  const customers = (await db.collection(collections.customers).find({ companyId }).sort({ name: 1 }).toArray()).map((customer: any) => ({
-    _id: customer._id.toString(),
-    name: customer.name,
-    email: customer.email,
-    phone: customer.phone || null,
-    address: customer.address || null,
-    createdAt: customer.createdAt ? customer.createdAt.toISOString() : null,
-  })) as Customer[]
-
+  // Fetch real data from Prisma
+  const customers = await db.customer.findMany({
+    where: { companyId },
+    orderBy: { name: 'asc' },
+  })
   return (
     <div className="rounded-md border">
       <Table>
@@ -69,7 +48,6 @@ export async function AdminCustomersTable() {
             </TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
-            
         </TableHeader>
         <TableBody>
           {customers.length === 0 ? (
@@ -79,8 +57,8 @@ export async function AdminCustomersTable() {
               </TableCell>
             </TableRow>
           ) : (
-            customers.map((customer: Customer) => (
-              <TableRow key={customer._id.toString()}>
+            customers.map((customer) => (
+              <TableRow key={customer.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center">
                     <User className="mr-2 h-4 w-4 text-blue-500" />
@@ -112,17 +90,17 @@ export async function AdminCustomersTable() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/customers/${customer._id}/view`}>View details</Link>
+                        <Link href={`/admin/customers/${customer.id}/view`}>View details</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/customers/${customer._id}/edit`}>Edit customer</Link>
+                        <Link href={`/admin/customers/${customer.id}/edit`}>Edit customer</Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <form
                           action={async () => {
                             "use server"
-                            await deleteCustomer(customer._id.toString())
+                            await deleteCustomer(customer.id)
                           }}
                         >
                           <button className="w-full text-left text-red-600">Delete customer</button>

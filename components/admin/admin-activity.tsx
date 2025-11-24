@@ -1,59 +1,52 @@
-import { connectToDatabase, collections } from "@/lib/db"
+import { db } from "@/lib/db"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { formatDistanceToNow } from "date-fns"
 
 export async function AdminActivity() {
-  // Fetch recent activity from MongoDB
-  const { db } = await connectToDatabase()
+  // Fetch recent activity from Prisma
 
-  // Get the 10 most recent ledger entries
-  interface LedgerEntry {
-    type: string
-    description: string
-    amount: number
-    createdAt: string
-    _id: { toString: () => string }
-  }
+  // Get the 5 most recent ledger entries
+  const recentLedger = await db.ledgerEntry.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    select: {
+      id: true,
+      type: true,
+      description: true,
+      amount: true,
+      createdAt: true,
+    },
+  })
 
-  const recentLedger: LedgerEntry[] = (await db.collection(collections.ledger).find({}).sort({ createdAt: -1 }).limit(5).toArray()).map((entry: LedgerEntry) => ({
-    type: entry.type,
-    description: entry.description,
-    amount: entry.amount,
-    createdAt: entry.createdAt,
-    _id: entry._id,
-  }))
-
-  // Get the 5 most recent product updates
-  interface Product {
-    name: string
-    price: number
-    updatedAt: string
-    _id: { toString: () => string }
-  }
-  const recentProducts: Product[] = (await db.collection(collections.products).find({}).sort({ updatedAt: -1 }).limit(3).toArray()).map((product: Product) => ({
-    name: product.name,
-    price: product.price,
-    updatedAt: product.updatedAt,
-    _id: product._id,
-  }))
+  // Get the 3 most recent product updates
+  const recentProducts = await db.product.findMany({
+    orderBy: { updatedAt: 'desc' },
+    take: 3,
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      updatedAt: true,
+    },
+  })
 
   // Combine and sort by date
   const allActivity = [
-    ...recentLedger.map((entry: LedgerEntry) => ({
+    ...recentLedger.map((entry) => ({
       type: "ledger",
       action: entry.type === "Cash In" ? "received payment" : "made payment",
       description: entry.description,
       amount: entry.amount,
       date: entry.createdAt,
-      id: entry._id.toString(),
+      id: entry.id,
     })),
-    ...recentProducts.map((product: Product) => ({
+    ...recentProducts.map((product) => ({
       type: "product",
       action: "updated product",
       description: product.name,
       price: product.price,
       date: product.updatedAt,
-      id: product._id.toString(),
+      id: product.id,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 

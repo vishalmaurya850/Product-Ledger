@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { InlineCreditSettings } from "@/components/ledger/credit-limit-settings"
 
 export default function OverduePage() {
@@ -106,7 +106,7 @@ export default function OverduePage() {
         (entry) =>
           (entry.description && entry.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (entry.invoiceNumber && entry.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (entry._id && entry._id.toLowerCase().includes(searchTerm.toLowerCase())),
+          (entry.id && entry.id.toLowerCase().includes(searchTerm.toLowerCase())),
       )
       setFilteredEntries(filtered)
     } else {
@@ -298,9 +298,9 @@ export default function OverduePage() {
                     </TableRow>
                   ) : (
                     filteredEntries.map((entry) => (
-                      <TableRow key={entry._id}>
+                      <TableRow key={entry.id}>
                         <TableCell className="font-medium">
-                          {entry.invoiceNumber || entry._id.substring(0, 8)}
+                          {entry.invoiceNumber || entry.id.substring(0, 8)}
                         </TableCell>
                         <TableCell>{entry.description}</TableCell>
                         <TableCell>{format(new Date(entry.dueDate), "MMM d, yyyy")}</TableCell>
@@ -331,13 +331,13 @@ export default function OverduePage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuItem asChild>
-                                <Link href={`/ledger/${entry._id}/view`}>View details</Link>
+                                <Link href={`/ledger/${entry.id}/view`}>View details</Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link href={`/ledger/${entry._id}/edit`}>Edit entry</Link>
+                                <Link href={`/ledger/${entry.id}/edit`}>Edit entry</Link>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleMarkAsPaid(entry._id)}>
+                              <DropdownMenuItem onClick={() => handleMarkAsPaid(entry.id)}>
                                 <span className="text-green-600">Mark as paid</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>

@@ -1,71 +1,40 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic" // Disable caching for this route
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const resolvedParams = await context.params; // Await the params
-    const session = await getServerSession(authOptions);
+    const resolvedParams = await context.params;
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const companyId = session.user.companyId || session.user.id;
-    const { db } = await connectToDatabase();
 
     console.log(`Generating invoice for entry ID: ${resolvedParams.id}`);
 
-    // Get the ledger entry
-    let entry;
-    try {
-      entry = await db.collection(collections.ledger).findOne({
-        _id: new ObjectId(resolvedParams.id), // Use resolvedParams.id
-      });
-    } catch (error) {
-      console.error("Error parsing ObjectId:", error);
-      return NextResponse.json({ error: "Invalid ledger entry ID format" }, { status: 400 });
-    }
+    // Get the ledger entry with customer and company
+    const entry = await db.ledgerEntry.findUnique({
+      where: { id: resolvedParams.id },
+      include: {
+        customer: true,
+        company: true,
+      },
+    });
 
     if (!entry) {
       console.log("Ledger entry not found");
       return NextResponse.json({ error: "Ledger entry not found" }, { status: 404 });
     }
 
-    console.log("Found ledger entry:", { id: entry._id, description: entry.description });
+    console.log("Found ledger entry:", { id: entry.id, description: entry.description });
 
-    // Get the customer if customerId exists
-    let customer = null;
-    if (entry.customerId) {
-      try {
-        customer = await db.collection(collections.customers).findOne({
-          _id: new ObjectId(entry.customerId),
-        });
-
-        console.log("Found customer:", customer ? { id: customer._id, name: customer.name } : "No customer found");
-      } catch (error) {
-        console.error("Error fetching customer:", error);
-        // Continue without customer data
-      }
-    }
-    
-    let companies = null;
-    if (entry.companyId) {
-      try {
-        companies=await db.collection(collections.companies).findOne({
-          _id: new ObjectId(companyId),
-        });
-        console.log("Found company:", companies ? { id: companies._id, name: companies.name } : "No company found");
-      }
-      catch (error) {
-        console.error("Error fetching company:", error);
-        // Continue without company data
-      }
-    }
+    const customer = entry.customer;
+    const companies = entry.company;
 
     // Generate a simple invoice HTML
     const invoiceHtml = `

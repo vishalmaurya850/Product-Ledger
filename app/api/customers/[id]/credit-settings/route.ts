@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic" // Disable caching
 
@@ -10,7 +8,7 @@ export const dynamic = "force-dynamic" // Disable caching
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -19,20 +17,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const companyId = session.user.companyId || session.user.id
     const customerId = resolvedParams.id
 
-    const { db } = await connectToDatabase()
-
-    // Validate customerId is a valid ObjectId
-    let customerObjectId
-    try {
-      customerObjectId = new ObjectId(customerId)
-    } catch {
-      return NextResponse.json({ error: "Invalid customer ID format" }, { status: 400 })
-    }
-
     // Get customer credit settings
-    const creditSettings = await db.collection(collections.customerSettings).findOne({
-      customerId: customerObjectId,
-      companyId,
+    const creditSettings = await db.customerCreditSettings.findFirst({
+      where: {
+        customerId,
+        companyId,
+      },
     })
 
     // Return default settings if none found
@@ -59,7 +49,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -67,14 +57,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const companyId = session.user.companyId || session.user.id
     const customerId = resolvedParams.id
-
-    // Validate customerId is a valid ObjectId
-    let customerObjectId
-    try {
-      customerObjectId = new ObjectId(customerId)
-    } catch {
-      return NextResponse.json({ error: "Invalid customer ID format" }, { status: 400 })
-    }
 
     // Parse request body
     const body = await request.json()
@@ -84,35 +66,33 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // const { db } = await connectToDatabase()
-
-    // Update or create credit settings
-    // const result = await db.collection(collections.customerSettings).updateOne(
-    //   {
-    //     customerId: customerObjectId,
-    //     companyId,
-    //   },
-    //   {
-    //     $set: {
-    //       creditLimit: Number(body.creditLimit),
-    //       gracePeriod: Number(body.gracePeriod),
-    //       interestRate: Number(body.interestRate),
-    //       updatedAt: new Date(),
-    //     },
-    //     $setOnInsert: {
-    //       customerId: customerObjectId,
-    //       companyId,
-    //       createdAt: new Date(),
-    //     },
-    //   },
-    //   { upsert: true },
-    // )
+    // Update or create credit settings using Prisma upsert
+    const settings = await db.customerCreditSettings.upsert({
+      where: {
+        customerId_companyId: {
+          customerId,
+          companyId,
+        },
+      },
+      update: {
+        creditLimit: Number(body.creditLimit),
+        gracePeriod: Number(body.gracePeriod),
+        interestRate: Number(body.interestRate),
+      },
+      create: {
+        customerId,
+        companyId,
+        creditLimit: Number(body.creditLimit),
+        gracePeriod: Number(body.gracePeriod),
+        interestRate: Number(body.interestRate),
+      },
+    })
 
     // Return updated settings
     return NextResponse.json({
-      creditLimit: Number(body.creditLimit),
-      gracePeriod: Number(body.gracePeriod),
-      interestRate: Number(body.interestRate),
+      creditLimit: settings.creditLimit,
+      gracePeriod: settings.gracePeriod,
+      interestRate: settings.interestRate,
     })
   } catch (error) {
     console.error("Failed to update customer credit settings:", error)

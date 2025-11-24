@@ -1,25 +1,14 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { LedgerEntry } from "@prisma/client"
 
 export const dynamic = "force-dynamic" // Disable caching
-
-interface LedgerEntry {
-  _id: ObjectId;
-  customerId: ObjectId;
-  type: "Sell" | "Payment In" | "Payment Out";
-  amount: number;
-  date: string;
-  status: "Paid" | "Unpaid" | "Overdue";
-  paidDate?: string;
-}
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -30,33 +19,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     console.log(`Fetching ledger entries for customer ${customerId} and company ${companyId}`)
 
-    const { db } = await connectToDatabase()
-
-    // Validate customerId is a valid ObjectId
-    let customerObjectId
-    try {
-      customerObjectId = new ObjectId(customerId)
-    } catch {
-      return NextResponse.json({ error: "Invalid customer ID format" }, { status: 400 })
-    }
-
     // Get customer credit settings
-    const creditSettings = (await db.collection(collections.customerSettings).findOne({
-      customerId: customerObjectId,
-      companyId,
-    })) || { creditLimit: 10000, gracePeriod: 30, interestRate: 18 }
+    const creditSettings = await db.customerCreditSettings.findFirst({
+      where: {
+        customerId,
+        companyId,
+      },
+    }) || { creditLimit: 10000, gracePeriod: 30, interestRate: 18 }
 
     console.log(`Credit settings for customer ${customerId}:`, creditSettings)
 
     // Get all ledger entries for this customer
-    const ledgerEntries = await db
-      .collection(collections.ledger)
-      .find({
-        customerId: customerObjectId,
+    const ledgerEntries = await db.ledgerEntry.findMany({
+      where: {
+        customerId,
         companyId,
-      })
-      .sort({ date: -1 })
-      .toArray()
+      },
+      orderBy: { date: 'desc' },
+    })
 
     console.log(`Found ${ledgerEntries.length} ledger entries for customer ${customerId}`)
 
@@ -105,8 +85,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
       return {
         ...entry,
-        _id: entry._id.toString(),
-        customerId: entry.customerId.toString(),
         daysCount,
         interest,
         status,

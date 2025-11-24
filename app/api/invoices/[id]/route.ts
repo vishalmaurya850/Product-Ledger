@@ -1,50 +1,37 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
+    const { id: invoiceId } = await params
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const { db } = await connectToDatabase()
-    const invoiceId = params.id
-
-    // Get the ledger entry (invoice)
-    const invoice = await db.collection(collections.ledger).findOne({
-      _id: new ObjectId(invoiceId),
-      companyId: session.user.companyId,
+    // Get the ledger entry (invoice) with customer and company
+    const invoice = await db.ledgerEntry.findUnique({
+      where: { id: invoiceId },
+      include: {
+        customer: true,
+        company: true,
+      },
     })
 
-    if (!invoice) {
+    if (!invoice || invoice.companyId !== session.user.companyId) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 })
     }
 
-    // Get customer details
-    const customer = await db.collection(collections.customers).findOne({
-      _id: new ObjectId(invoice.customerId),
-      companyId: session.user.companyId,
-    })
-
-    // Get company details
-    const company = await db.collection(collections.users).findOne({
-      _id: new ObjectId(session.user.id),
-    })
-
     // Get payment history for this invoice
-    const payments = await db
-      .collection(collections.ledger)
-      .find({
+    const payments = await db.ledgerEntry.findMany({
+      where: {
         companyId: session.user.companyId,
         type: "Payment In",
-        description: { $regex: invoiceId, $options: "i" },
-      })
-      .toArray()
+        description: { contains: invoiceId },
+      },
+    })
 
     // Calculate remaining amount
     const totalPaid = payments.reduce((sum: number, payment: any) => sum + payment.amount, 0)
@@ -53,16 +40,16 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const invoiceData = {
       ...invoice,
       customer: {
-        name: customer?.name || "Unknown Customer",
-        email: customer?.email || "",
-        phone: customer?.phone || "",
-        address: customer?.address || "",
+        name: invoice.customer?.name || "Unknown Customer",
+        email: invoice.customer?.email || "",
+        phone: invoice.customer?.phone || "",
+        address: invoice.customer?.address || "",
       },
       company: {
-        name: company?.profile?.companyName || company?.name || "Your Company",
-        address: company?.profile?.address || "",
-        email: company?.email || "",
-        phone: company?.profile?.phone || "",
+        name: invoice.company?.name || "Your Company",
+        address: invoice.company?.address || "",
+        email: invoice.company?.email || "",
+        phone: invoice.company?.phone || "",
       },
       payments: payments.map((payment: any) => ({
         amount: payment.amount,

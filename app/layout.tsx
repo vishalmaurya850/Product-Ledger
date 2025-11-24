@@ -9,8 +9,7 @@ import { TopNav } from "@/components/top-nav"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth-provider"
 import { getCompanyName } from "@/lib/actions";
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,7 +23,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   const companyName = await getCompanyName();
   const isAuthenticated = !!session
 

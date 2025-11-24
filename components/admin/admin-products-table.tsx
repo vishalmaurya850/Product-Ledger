@@ -1,4 +1,4 @@
-import { connectToDatabase, collections } from "@/lib/db"
+import { db } from "@/lib/db"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,27 +13,11 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { deleteProduct } from "@/lib/actions"
 
-// Define a Product type
-interface Product {
-  _id: string
-  name: string
-  sku: string
-  price: number
-  stock: number
-  category: string
-}
-
 export async function AdminProductsTable() {
-  // Fetch real data from MongoDB
-  const { db } = await connectToDatabase()
-  const products = (await db.collection(collections.products).find({}).sort({ name: 1 }).toArray()).map((doc: { _id: string; name: string; sku: string; price: number; stock: number; category: string }) => ({
-    _id: doc._id.toString(),
-    name: doc.name,
-    sku: doc.sku,
-    price: doc.price,
-    stock: doc.stock,
-    category: doc.category,
-  })) as Product[]
+  // Fetch real data from Prisma
+  const products = await db.product.findMany({
+    orderBy: { name: 'asc' },
+  })
 
   return (
     <div className="rounded-md border">
@@ -71,8 +55,8 @@ export async function AdminProductsTable() {
               </TableCell>
             </TableRow>
           ) : (
-            products.map((product: Product) => (
-              <TableRow key={product._id.toString()}>
+            products.map((product) => (
+              <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.sku}</TableCell>
                 <TableCell>${product.price.toFixed(2)}</TableCell>
@@ -101,17 +85,17 @@ export async function AdminProductsTable() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <a href={`/admin/products/${product._id}/view`}>View details</a>
+                        <a href={`/admin/products/${product.id}/view`}>View details</a>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <a href={`/admin/products/${product._id}/edit`}>Edit product</a>
+                        <a href={`/admin/products/${product.id}/edit`}>Edit product</a>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <form
                           action={async () => {
                             "use server"
-                            await deleteProduct(product._id.toString())
+                            await deleteProduct(product.id)
                           }}
                         >
                           <button className="w-full text-left text-red-600">Delete product</button>

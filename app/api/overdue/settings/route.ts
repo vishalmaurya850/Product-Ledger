@@ -1,24 +1,17 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase, collections } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+;
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
-
     const companyId = session.user.companyId;
-
     try {
-      const { db } = await connectToDatabase();
-
       // Fetch overdue settings from the database
-      const settings = await db.collection(collections.customerSettings).findOne({ companyId });
-
+      const settings = await db.overdueSettings.findUnique({ where: { companyId } });
       if (!settings) {
         console.warn(`No overdue settings found for companyId: ${companyId}. Returning default settings.`);
         return NextResponse.json({
@@ -30,13 +23,10 @@ export async function GET() {
           updatedAt: new Date(),
         });
       }
-
       console.log("Overdue settings fetched:", settings);
-
       return NextResponse.json(settings);
     } catch (error) {
       console.error("Database error while fetching overdue settings:", error);
-
       // Return default settings if database connection fails
       return NextResponse.json({
         gracePeriod: 7,

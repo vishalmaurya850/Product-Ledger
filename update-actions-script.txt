@@ -1,0 +1,28 @@
+Lines to update in lib/actions.ts:
+
+1. Line ~295: return { success: true, id: customer.id } 
+   Change to: return { success: true, id: customer.id, message: "Customer created successfully" }
+
+2. Line ~309: checkPermission(permissions, "customers_edit")
+   Change to: 
+   const permCheck = checkPermission(permissions, "customers_edit")
+   if (!permCheck.allowed) {
+     return { success: false, error: permCheck.message, unauthorized: true }
+   }
+
+3. Line ~325: return { success: true }
+   Change to: return { success: true, message: "Customer updated successfully" }
+
+4. Line ~340: checkPermission(permissions, "customers_delete")
+   Change to: 
+   const permCheck = checkPermission(permissions, "customers_delete")
+   if (!permCheck.allowed) {
+     return { success: false, error: permCheck.message, unauthorized: true }
+   }
+
+5. Line ~369: return { success: true }
+   Change to: return { success: true, message: "Customer deleted successfully" }
+
+And continue for all other functions... (products, users, settings)
+
+"ledger_view","ledger_create","ledger_edit","ledger_delete","products_view","products_create","products_edit","products_delete","customers_view","customers_create","customers_edit","customers_delete","users_view","users_create","users_edit","users_delete","reports_view","settings_view","settings_edit"

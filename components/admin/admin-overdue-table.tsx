@@ -1,9 +1,7 @@
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 import { format, differenceInDays } from "date-fns"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -16,70 +14,42 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { markLedgerEntryAsPaid } from "@/lib/actions"
 import Link from "next/link"
-
 export async function AdminOverdueTable() {
   // Get user session
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     return <div>Not authenticated</div>
   }
-
   const companyId = session.user.id
-  const { db } = await connectToDatabase()
-
   // Get overdue settings
-  const settings = (await db.collection(collections.overdueSettings).findOne({ companyId })) || {
+  const settings = await db.overdueSettings.findUnique({ where: { companyId } }) || {
     gracePeriod: 7,
     interestRate: 0.15, // 15% annual interest rate
-    compoundingPeriod: "daily",
+    compoundingPeriod: "daily" as const,
     minimumFee: 5,
     companyId,
   }
-
   // Find all entries that are past due date and not paid
   const today = new Date()
-  const overdueEntries = (await db
-    .collection(collections.ledger)
-    .find({
+  const overdueEntries = await db.ledgerEntry.findMany({
+    where: {
       companyId,
-      dueDate: { $lt: today },
-      status: { $ne: "Paid" },
-    })
-    .sort({ dueDate: 1 })
-    .toArray()).map((entry: { _id: string; description?: string; dueDate?: string; amount?: number; status?: string }) => ({
-      _id: entry._id.toString(),
-      description: entry.description || "",
-      dueDate: entry.dueDate || "",
-      amount: entry.amount || 0,
-      status: entry.status || "Unknown",
-    })) as LedgerEntry[]
-
-  // Define the type for ledger entries
-  interface LedgerEntry {
-    _id: string
-    description: string
-    dueDate: string
-    amount: number
-    status: string
-    daysOverdue?: number
-    interest?: number
-    totalDue?: number
-  }
-
+      dueDate: { lt: today },
+      status: { not: "Paid" },
+    },
+    orderBy: { dueDate: 'asc' },
+  })
   // Calculate interest for each overdue entry
-  const entriesWithInterest = overdueEntries.map((entry: LedgerEntry) => {
-    const dueDate = new Date(entry.dueDate)
+  const entriesWithInterest = overdueEntries.map((entry) => {
+    const dueDate = entry.dueDate ? new Date(entry.dueDate) : new Date()
     const daysOverdue = differenceInDays(today, dueDate)
-
     // Only apply interest after grace period
     if (daysOverdue <= settings.gracePeriod) {
       return { ...entry, daysOverdue, interest: 0, totalDue: entry.amount }
     }
-
     // Calculate interest based on settings
     const effectiveDaysOverdue = daysOverdue - settings.gracePeriod
     const dailyRate = settings.interestRate / 365
-
     let interest = 0
     if (settings.compoundingPeriod === "daily") {
       interest = entry.amount * (Math.pow(1 + dailyRate, effectiveDaysOverdue) - 1)
@@ -95,10 +65,10 @@ export async function AdminOverdueTable() {
       const monthlyRate = dailyRate * 30
       interest = entry.amount * (Math.pow(1 + monthlyRate, months) * (1 + dailyRate * remainingDays) - 1)
     }
-
     // Apply minimum fee if needed
-    interest = Math.max(interest, settings.minimumFee)
-
+    if (settings.minimumFee !== null) {
+      interest = Math.max(interest, settings.minimumFee)
+    }
     return {
       ...entry,
       daysOverdue,
@@ -106,7 +76,6 @@ export async function AdminOverdueTable() {
       totalDue: entry.amount + interest,
     }
   })
-
   return (
     <div className="rounded-md border">
       <Table>
@@ -145,11 +114,11 @@ export async function AdminOverdueTable() {
               </TableCell>
             </TableRow>
           ) : (
-            entriesWithInterest.map((entry: LedgerEntry) => (
-              <TableRow key={entry._id.toString()}>
-                <TableCell className="font-medium">{entry._id.toString().substring(0, 8)}</TableCell>
+            entriesWithInterest.map((entry) => (
+              <TableRow key={entry.id}>
+                <TableCell className="font-medium">{entry.id.substring(0, 8)}</TableCell>
                 <TableCell>{entry.description}</TableCell>
-                <TableCell>{format(new Date(entry.dueDate), "MMM d, yyyy")}</TableCell>
+                <TableCell>{entry.dueDate ? format(new Date(entry.dueDate), "MMM d, yyyy") : "-"}</TableCell>
                 <TableCell>
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -177,17 +146,17 @@ export async function AdminOverdueTable() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/ledger/${entry._id}/view`}>View details</Link>
+                        <Link href={`/admin/ledger/${entry.id}/view`}>View details</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/ledger/${entry._id}/edit`}>Edit entry</Link>
+                        <Link href={`/admin/ledger/${entry.id}/edit`}>Edit entry</Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <form
                           action={async () => {
                             "use server"
-                            await markLedgerEntryAsPaid(entry._id.toString())
+                            await markLedgerEntryAsPaid(entry.id)
                           }}
                         >
                           <button className="w-full text-left text-green-600">Mark as paid</button>

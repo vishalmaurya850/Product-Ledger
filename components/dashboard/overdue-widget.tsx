@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Loader2, Settings, AlertCircle, ArrowRight } from "lucide-react"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
@@ -173,13 +173,13 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
       ) : (
         <div className="space-y-3">
           {overdueEntries.slice(0, 5).map((entry) => (
-            <Card key={entry._id} className="overflow-hidden">
+            <Card key={entry.id} className="overflow-hidden">
               <CardContent className="p-0">
                 <div className="flex items-center border-l-4 border-red-500">
                   <div className="p-4 flex-1">
                     <div className="flex justify-between">
                       <h4 className="font-medium">
-                        {entry.description || `Invoice #${entry.invoiceNumber || entry._id.substring(0, 8)}`}
+                        {entry.description || `Invoice #${entry.invoiceNumber || entry.id.substring(0, 8)}`}
                       </h4>
                       <span className="text-red-600 font-medium">₹{entry.totalDue.toFixed(2)}</span>
                     </div>
@@ -197,7 +197,7 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
                   <Button
                     variant="ghost"
                     className="h-full rounded-none px-4 border-l"
-                    onClick={() => router.push(`/ledger/${entry._id}/view`)}
+                    onClick={() => router.push(`/ledger/${entry.id}/view`)}
                   >
                     <ArrowRight className="h-4 w-4" />
                   </Button>

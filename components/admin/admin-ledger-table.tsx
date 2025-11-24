@@ -1,4 +1,4 @@
-import { connectToDatabase, collections } from "@/lib/db"
+import { db } from "@/lib/db"
 import { format } from "date-fns"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 
@@ -14,31 +14,11 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { deleteLedgerEntry } from "@/lib/actions"
 
-// Define the interface for a ledger entry
-interface LedgerEntry {
-  _id: string
-  description: string
-  type: "Cash In" | "Cash Out"
-  amount: number
-  status: "Paid" | "Pending" | "Overdue"
-  dueDate?: string
-  date: string // Add the missing 'date' property
-}
-
 export async function AdminLedgerTable() {
-  // Fetch real data from MongoDB
-  const { db } = await connectToDatabase()
-  const ledgerEntries: LedgerEntry[] = await db.collection(collections.ledger).find({}).sort({ date: -1 }).toArray().then((entries: Array<{ _id: string; description: string; type: "Cash In" | "Cash Out"; amount: number; status: "Paid" | "Pending" | "Overdue"; dueDate?: string; date: string }>) =>
-    entries.map((entry) => ({
-      _id: entry._id.toString(),
-      description: entry.description,
-      type: entry.type,
-      amount: entry.amount,
-      status: entry.status,
-      dueDate: entry.dueDate,
-      date: entry.date,
-    }))
-  )
+  // Fetch real data from Prisma
+  const ledgerEntries = await db.ledgerEntry.findMany({
+    orderBy: { date: 'desc' },
+  })
   return (
     <div className="rounded-md border">
       <Table>
@@ -92,7 +72,7 @@ export async function AdminLedgerTable() {
             </TableRow>
           ) : (
             ledgerEntries.map((entry) => (
-              <TableRow key={entry._id.toString()}>
+              <TableRow key={entry.id}>
                 <TableCell className="font-medium">{format(new Date(entry.date), "MMM d, yyyy")}</TableCell>
                 <TableCell>{entry.description}</TableCell>
                 <TableCell>
@@ -134,17 +114,17 @@ export async function AdminLedgerTable() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <a href={`/admin/ledger/${entry._id}/view`}>View details</a>
+                        <a href={`/admin/ledger/${entry.id}/view`}>View details</a>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <a href={`/admin/ledger/${entry._id}/edit`}>Edit entry</a>
+                        <a href={`/admin/ledger/${entry.id}/edit`}>Edit entry</a>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <form
                           action={async () => {
                             "use server"
-                            await deleteLedgerEntry(entry._id.toString())
+                            await deleteLedgerEntry(entry.id)
                           }}
                         >
                           <button className="w-full text-left text-red-600">Delete entry</button>

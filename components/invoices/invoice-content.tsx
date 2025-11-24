@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 interface InvoiceData {
-  _id: string
+  id: string
   companyId: string
   customerId: string
   type: string
@@ -146,7 +146,7 @@ export function InvoiceContent({ invoiceId }: InvoiceContentProps) {
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Invoice #{invoice._id.slice(-8)}</h1>
+            <h1 className="text-3xl font-bold">Invoice #{invoice.id.slice(-8)}</h1>
             <p className="text-muted-foreground">Created on {format(new Date(invoice.createdAt), "MMMM d, yyyy")}</p>
           </div>
         </div>

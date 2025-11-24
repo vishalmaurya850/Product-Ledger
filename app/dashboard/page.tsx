@@ -1,84 +1,62 @@
 import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { connectToDatabase, collections } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Overview } from "@/components/dashboard/overview"
 import { RecentSales } from "@/components/dashboard/recent-sales"
 import { OverdueWidget } from "@/components/dashboard/overdue-widget"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, Users, Package, AlertTriangle } from "lucide-react"
-
 export default async function DashboardPage() {
   // Check if user is authenticated
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     redirect("/auth/login")
   }
-
   // Get company data
-  const { db } = await connectToDatabase()
   const companyId = session.user.companyId || session.user.id
-
   // Get total customers
-  const totalCustomers = await db.collection(collections.customers).countDocuments({ companyId })
-
+  const totalCustomers = await db.customer.count({ where: { companyId } })
   // Get total products
-  const totalProducts = await db.collection(collections.products).countDocuments({ companyId })
-
+  const totalProducts = await db.product.count({ where: { companyId } })
   // Get total ledger entries
-  const totalLedgerEntries = await db.collection(collections.ledger).countDocuments({ companyId })
-
+  const totalLedgerEntries = await db.ledgerEntry.count({ where: { companyId } })
   // Get total sales amount
-  const salesResult = await db
-    .collection(collections.ledger)
-    .aggregate([{ $match: { companyId, type: "Sell" } }, { $group: { _id: null, total: { $sum: "$amount" } } }])
-    .toArray()
-
-  const totalSales = salesResult.length > 0 ? salesResult[0].total : 0
-
+  const salesResult = await db.ledgerEntry.aggregate({
+    where: { companyId, type: "Sell" },
+    _sum: { amount: true },
+  })
+  const totalSales = salesResult._sum.amount || 0
   // Get total payments received
-  const paymentsResult = await db
-    .collection(collections.ledger)
-    .aggregate([{ $match: { companyId, type: "Payment In" } }, { $group: { _id: null, total: { $sum: "$amount" } } }])
-    .toArray()
-
-  const totalPayments = paymentsResult.length > 0 ? paymentsResult[0].total : 0
-
+  const paymentsResult = await db.ledgerEntry.aggregate({
+    where: { companyId, type: "Payment In" },
+    _sum: { amount: true },
+  })
+  const totalPayments = paymentsResult._sum.amount || 0
   // Get total outstanding amount
-  const outstandingResult = await db
-    .collection(collections.ledger)
-    .aggregate([
-      { $match: { companyId, type: "Sell", status: { $ne: "Paid" } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ])
-    .toArray()
-
-  const totalOutstanding = outstandingResult.length > 0 ? outstandingResult[0].total : 0
-
+  const outstandingResult = await db.ledgerEntry.aggregate({
+    where: { companyId, type: "Sell", status: { not: "Paid" } },
+    _sum: { amount: true },
+  })
+  const totalOutstanding = outstandingResult._sum.amount || 0
   // Get total overdue amount
-  const overdueResult = await db
-    .collection(collections.ledger)
-    .aggregate([{ $match: { companyId, status: "Overdue" } }, { $group: { _id: null, total: { $sum: "$amount" } } }])
-    .toArray()
-
-  const totalOverdue = overdueResult.length > 0 ? overdueResult[0].total : 0
-
+  const overdueResult = await db.ledgerEntry.aggregate({
+    where: { companyId, status: "Overdue" },
+    _sum: { amount: true },
+  })
+  const totalOverdue = overdueResult._sum.amount || 0
   // Get overdue count
-  const overdueCount = await db.collection(collections.ledger).countDocuments({ companyId, status: "Overdue" })
-
+  const overdueCount = await db.ledgerEntry.count({ where: { companyId, status: "Overdue" } })
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
-
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="overdue">Overdue</TabsTrigger>
         </TabsList>
-
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -143,7 +121,6 @@ export default async function DashboardPage() {
             </Card>
           </div>
         </TabsContent>
-
         <TabsContent value="overdue" className="space-y-4">
           <Card>
             <CardHeader>

@@ -1,20 +1,16 @@
 import { notFound, redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { connectToDatabase, collections } from "@/lib/db"
-import { ObjectId } from "mongodb"
-// import { use } from "react"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EditUserForm } from "@/components/admin/edit-user-form"
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
-  // Use React.use to unwrap the params promise
   const resolvedParams = await (params)
   const userId = resolvedParams.id
 
   // Check if user is authenticated and has permission
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     redirect("/auth/login")
   }
@@ -24,15 +20,24 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
     redirect("/admin/users")
   }
 
-  // Get user details
-  const { db } = await connectToDatabase()
-  const user = await db.collection(collections.users).findOne(
-    {
-      _id: new ObjectId(userId),
+  // Get user details (excluding password)
+  const user = await db.user.findUnique({
+    where: {
+      id: userId,
       companyId: session.user.companyId,
     },
-    { projection: { password: 0 } }, // Exclude password
-  )
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      companyId: true,
+      companyName: true,
+      role: true,
+      permissions: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  })
 
   if (!user) {
     notFound()

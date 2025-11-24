@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { CalendarIcon, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
@@ -122,12 +122,16 @@ export default function NewLedgerEntryPage() {
       if (result.success) {
         console.log("Ledger entry created successfully")
         toast({
-          title: "Entry created",
-          description: "Ledger entry has been created successfully",
+          title: "Success",
+          description: result.message || "Ledger entry has been created successfully",
         })
         router.push(`/ledger?customerId=${selectedCustomer}`)
       } else {
-        throw new Error(result.error || "Failed to create entry")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to create entry",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error creating ledger entry:", error)
@@ -158,7 +162,7 @@ export default function NewLedgerEntryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {customers.map((customer) => (
-                    <SelectItem key={customer._id} value={customer._id}>
+                    <SelectItem key={customer.id} value={customer.id}>
                       {customer.name}
                     </SelectItem>
                   ))}
@@ -223,7 +227,7 @@ export default function NewLedgerEntryPage() {
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {products.map((product) => (
-                      <SelectItem key={product._id} value={product.name}>
+                      <SelectItem key={product.id} value={product.name}>
                         {product.name}
                       </SelectItem>
                     ))}

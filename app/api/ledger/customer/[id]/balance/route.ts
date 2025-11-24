@@ -1,29 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { connectToDatabase, collections } from "@/lib/db"
-import { ObjectId } from "mongodb"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
+    const { id: customerId } = await params
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const customerId = params.id
     const companyId = session.user.companyId
-    const { db } = await connectToDatabase()
 
     // Get all ledger entries for this customer
-    const ledgerEntries = await db
-      .collection(collections.ledger)
-      .find({
+    const ledgerEntries = await db.ledgerEntry.findMany({
+      where: {
         companyId,
         customerId,
-        status: { $ne: "Cancelled" },
-      })
-      .toArray()
+        status: { not: "Cancelled" },
+      },
+    })
 
     let balance = 0
 
@@ -73,12 +69,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Get customer's credit settings
-    const customer = await db.collection(collections.customers).findOne({
-      _id: new ObjectId(customerId),
-      companyId,
+    const customer = await db.customer.findUnique({
+      where: { id: customerId },
+      include: {
+        customerCreditSettings: true,
+      },
     })
 
-    const creditLimit = customer?.creditSettings?.creditLimit || 0
+    const creditSettings = customer?.customerCreditSettings?.[0]
+    const creditLimit = creditSettings?.creditLimit || 0
     const availableCredit = Math.max(0, creditLimit - Math.max(0, balance))
 
     return NextResponse.json({

@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { deleteUser } from "@/lib/actions"
 import {
   AlertDialog,
@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 interface AdminUsersTableProps {
-  users: { _id: string; name: string; email: string; role: string; createdAt: string }[]; // Define the appropriate type for your users array
+  users: { id: string; name: string; email: string; role: string; createdAt: string }[]; // Define the appropriate type for your users array
 }
 
 
@@ -89,19 +89,28 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
     try {
       // Prevent deleting yourself
       if (userToDelete === session?.user?.id) {
-        throw new Error("You cannot delete your own account")
+        toast({
+          title: "Error",
+          description: "You cannot delete your own account",
+          variant: "destructive",
+        })
+        return
       }
 
       const result = await deleteUser(userToDelete)
 
       if (result.success) {
-        setUsers(users.filter((user) => user._id !== userToDelete))
+        setUsers(users.filter((user) => user.id !== userToDelete))
         toast({
-          title: "User deleted",
-          description: "User has been deleted successfully",
+          title: "Success",
+          description: result.message || "User has been deleted successfully",
         })
       } else {
-        throw new Error(result.error || "Failed to delete user")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to delete user",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error deleting user:", error)
@@ -158,7 +167,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
             </TableHeader>
             <TableBody>
               {filteredUsers.map((user) => (
-                <TableRow key={user._id}>
+                <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
@@ -185,17 +194,17 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => router.push(`/admin/users/${user._id}/view`)}>
+                        <DropdownMenuItem onClick={() => router.push(`/admin/users/${user.id}/view`)}>
                           View details
                         </DropdownMenuItem>
                         {canEdit && (
-                          <DropdownMenuItem onClick={() => router.push(`/admin/users/${user._id}/edit`)}>
+                          <DropdownMenuItem onClick={() => router.push(`/admin/users/${user.id}/edit`)}>
                             Edit user
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        {canDelete && user._id !== session?.user?.id && (
-                          <DropdownMenuItem className="text-red-600" onClick={() => setUserToDelete(user._id)}>
+                        {canDelete && user.id !== session?.user?.id && (
+                          <DropdownMenuItem className="text-red-600" onClick={() => setUserToDelete(user.id)}>
                             Delete user
                           </DropdownMenuItem>
                         )}

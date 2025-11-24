@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase, collections } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { ObjectId } from "mongodb";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -19,55 +17,40 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const companyId = session.user.companyId;
-    const { db } = await connectToDatabase();
 
-    // Get customer by ID and ensure it belongs to the same company
-    const customer = await db.collection(collections.customers).findOne({
-      _id: new ObjectId(resolvedParams.id),
-      companyId,
+    // Get customer by ID with credit settings and recent entries
+    const customer = await db.customer.findUnique({
+      where: { id: resolvedParams.id },
+      include: {
+        customerCreditSettings: true,
+        ledgerEntries: {
+          where: { companyId },
+          orderBy: { date: 'desc' },
+          take: 5,
+        },
+      },
     });
 
-    if (!customer) {
+    if (!customer || customer.companyId !== companyId) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    // Get customer credit settings
-    const creditSettings = await db.collection(collections.customerSettings).findOne({
-      customerId: new ObjectId(resolvedParams.id),
-      companyId,
+    // Calculate total outstanding amount
+    const outstandingResult = await db.ledgerEntry.aggregate({
+      where: {
+        customerId: resolvedParams.id,
+        companyId,
+        status: "Unpaid",
+      },
+      _sum: { amount: true },
     });
 
-    // Get recent ledger entries for this customer
-    const recentEntries = await db
-      .collection(collections.ledger)
-      .find({
-        customerId: new ObjectId(resolvedParams.id),
-        companyId,
-      })
-      .sort({ date: -1 })
-      .limit(5)
-      .toArray();
-
-    // Calculate total outstanding amount
-    const ledgerEntries = await db
-      .collection(collections.ledger)
-      .find({
-        customerId: new ObjectId(resolvedParams.id),
-        companyId,
-      })
-      .toArray();
-
-    const outstandingAmount = ledgerEntries.reduce((total: number, entry: { status: string; amount: number }) => {
-      if (entry.status === "Unpaid" && typeof entry.amount === "number") {
-        return total + entry.amount;
-      }
-      return total;
-    }, 0);
+    const outstandingAmount = outstandingResult._sum.amount || 0;
 
     // Prepare the response
     const response = {
       customer: {
-        id: customer._id.toString(),
+        id: customer.id,
         name: customer.name,
         email: customer.email,
         phone: customer.phone,
@@ -78,14 +61,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       },
-      creditSettings: creditSettings || {
+      creditSettings: customer.customerCreditSettings || {
         customerId: resolvedParams.id,
         creditLimit: 10000,
         gracePeriod: 30,
         interestRate: 18,
         companyId,
       },
-      recentEntries,
+      recentEntries: customer.ledgerEntries,
       outstandingAmount,
     };
 

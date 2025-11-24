@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Package, Edit, ArrowLeft, Loader2, RefreshCw, AlertCircle } from "lucide-react";
@@ -11,14 +11,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
 
 export default function ViewProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
 
-  const fetchProduct = async (id: string) => {
+  const fetchProduct = async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -50,20 +50,12 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
   };
 
   useEffect(() => {
-    const resolveParams = async () => {
-      const resolved = await params;
-      setResolvedParams(resolved);
-      fetchProduct(resolved.id);
-    };
-
-    resolveParams();
-  }, [params]);
+    fetchProduct();
+  }, [id]);
 
   const handleRefresh = () => {
-    if (resolvedParams?.id) {
-      setIsRefreshing(true);
-      fetchProduct(resolvedParams.id);
-    }
+    setIsRefreshing(true);
+    fetchProduct();
   };
 
   if (isLoading) {
@@ -150,7 +142,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
             )}
           </Button>
           <Button asChild>
-            <Link href={`/products/${resolvedParams?.id}/edit`}>
+            <Link href={`/products/${id}/edit`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Product
             </Link>

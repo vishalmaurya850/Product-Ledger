@@ -1,24 +1,21 @@
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { connectToDatabase, collections } from "@/lib/db"
-import { ObjectId } from "mongodb"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 import { format } from "date-fns"
 import { ArrowLeft, Edit, Mail, Phone, MapPin, CreditCard, User, Calendar } from "lucide-react"
-// import { use } from "react"
+import { LedgerEntry } from "@prisma/client"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
 
 export default async function ViewCustomerPage({ params }: { params: Promise<{ id: string }> }) {
-  // Use React.use to unwrap the params promise
   const resolvedParams = await (params)
   const customerId = resolvedParams.id
 
   // Check if user is authenticated
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     redirect("/auth/login")
   }
@@ -29,10 +26,11 @@ export default async function ViewCustomerPage({ params }: { params: Promise<{ i
   }
 
   // Get customer details
-  const { db } = await connectToDatabase()
-  const customer = await db.collection(collections.customers).findOne({
-    _id: new ObjectId(customerId),
-    companyId: session.user.companyId,
+  const customer = await db.customer.findUnique({
+    where: {
+      id: customerId,
+      companyId: session.user.companyId,
+    },
   })
 
   if (!customer) {
@@ -40,46 +38,30 @@ export default async function ViewCustomerPage({ params }: { params: Promise<{ i
   }
 
   // Get customer credit settings
-  const creditSettings = await db.collection(collections.customerSettings).findOne({
-    customerId: new ObjectId(customerId),
-    companyId: session.user.companyId,
+  const creditSettings = await db.customerCreditSettings.findFirst({
+    where: {
+      customerId,
+      companyId: session.user.companyId,
+    },
   })
 
   // Get recent ledger entries for this customer
-  type LedgerEntry = {
-    _id: ObjectId
-    date: string
-    type: string
-    description: string
-    amount: number
-    status: string
-  }
-
-  const recentEntries: LedgerEntry[] = (await db
-    .collection(collections.ledger)
-    .find({
-      customerId: new ObjectId(customerId),
+  const recentEntries = await db.ledgerEntry.findMany({
+    where: {
+      customerId,
       companyId: session.user.companyId,
-    })
-    .sort({ date: -1 })
-    .limit(5)
-    .toArray()).map((entry: LedgerEntry) => ({
-      _id: entry._id,
-      date: entry.date,
-      type: entry.type,
-      description: entry.description,
-      amount: entry.amount,
-      status: entry.status,
-    }))
+    },
+    orderBy: { date: 'desc' },
+    take: 5,
+  })
 
   // Calculate total outstanding amount
-  const ledgerEntries = (await db
-    .collection(collections.ledger)
-    .find({
-      customerId: new ObjectId(customerId),
+  const ledgerEntries = await db.ledgerEntry.findMany({
+    where: {
+      customerId,
       companyId: session.user.companyId,
-    })
-    .toArray()) as LedgerEntry[]
+    },
+  })
 
   let totalOutstanding = 0
   let totalPaid = 0
@@ -267,7 +249,7 @@ export default async function ViewCustomerPage({ params }: { params: Promise<{ i
                 </thead>
                 <tbody>
                   {recentEntries.map((entry) => (
-                    <tr key={entry._id.toString()} className="border-b hover:bg-muted/50">
+                    <tr key={entry.id} className="border-b hover:bg-muted/50">
                       <td className="px-4 py-2">{format(new Date(entry.date), "dd/MM/yyyy")}</td>
                       <td className="px-4 py-2">{entry.type}</td>
                       <td className="px-4 py-2">{entry.description}</td>

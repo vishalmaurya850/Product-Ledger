@@ -64,7 +64,7 @@ export default async function CustomerCreditSettingsPage({ params }: { params: P
       >
         <div className="p-4 border-b bg-muted/30">
           <InlineCreditSettings
-            customerId={customer._id}
+            customerId={customer.id}
             initialSettings={creditSettings}
             onSettingsUpdate={(updatedSettings) => {
               console.log("Updated credit settings:", updatedSettings);

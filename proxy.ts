@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { getToken } from "next-auth/jwt"
+import { auth } from "@/lib/auth"
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+export default auth((req) => {
+  const { pathname } = req.nextUrl
+  const session = req.auth
 
   // Public paths that don't require authentication
-  const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"]
+  const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password","/privacy", "/terms", "/cookie", "/about", "/blog", "/careers", "/contact", "/features","/pricing","/changelog","/roadmap"]
   if (publicPaths.includes(pathname) || publicPaths.some((path) => pathname.startsWith(`${path}/`))) {
     return NextResponse.next()
   }
@@ -20,23 +21,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check if user is authenticated
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
-
   // If not authenticated, redirect to login
-  if (!token) {
-    const url = new URL("/auth/login", request.url)
-    url.searchParams.set("callbackUrl", encodeURI(request.url))
+  if (!session?.user) {
+    const url = new URL("/auth/login", req.url)
+    url.searchParams.set("callbackUrl", encodeURI(req.url))
     return NextResponse.redirect(url)
   }
 
   // Check permissions for specific routes
-  const userPermissions = (token.permissions as string[]) || []
-  const userRole = token.role as string
+  const userPermissions = (session.user.permissions as string[]) || []
+  const userRole = session.user.role as string
 
   // Admin routes - only accessible by admins
   if (pathname.startsWith("/admin") && userRole !== "admin") {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   // Ledger routes - require ledger_view permission
@@ -45,7 +43,7 @@ export async function middleware(request: NextRequest) {
     !userPermissions.includes("ledger_view") &&
     userRole !== "admin"
   ) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   // Products routes - require products_view permission
@@ -54,7 +52,7 @@ export async function middleware(request: NextRequest) {
     !userPermissions.includes("products_view") &&
     userRole !== "admin"
   ) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   // Customers routes - require customers_view permission
@@ -63,7 +61,7 @@ export async function middleware(request: NextRequest) {
     !userPermissions.includes("customers_view") &&
     userRole !== "admin"
   ) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   // Reports routes - require reports_view permission
@@ -72,16 +70,16 @@ export async function middleware(request: NextRequest) {
     !userPermissions.includes("reports_view") &&
     userRole !== "admin"
   ) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   // Settings routes - require settings_view permission
   if (pathname.startsWith("/settings") && !userPermissions.includes("settings_view") && userRole !== "admin") {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   return NextResponse.next()
-}
+})
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)"],

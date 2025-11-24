@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { createUser } from "@/lib/actions"
 import { availablePermissions } from "@/lib/permissions" // Import from permissions.ts instead of db.ts
 
@@ -42,6 +42,7 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       name: "",
       email: "",
@@ -72,13 +73,18 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
 
       if (result.success) {
         toast({
-          title: "User created",
-          description: "The user has been created successfully",
+          title: "Success",
+          description: result.message || "The user has been created successfully",
         })
         router.push("/admin/users")
-      } else {
-        throw new Error(result.error || "Failed to create user")
+        return
       }
+      
+      toast({
+        title: result.unauthorized ? "Permission Denied" : "Error",
+        description: result.error || "Failed to create user",
+        variant: "destructive",
+      })
     } catch (error: any) {
       console.error("Error creating user:", error)
       toast({
@@ -89,6 +95,18 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  function onError(errors: any) {
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ")
+    
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    })
   }
 
   // Group permissions by module
@@ -102,7 +120,7 @@ export function NewUserForm({ companyId }: NewUserFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField
             control={form.control}

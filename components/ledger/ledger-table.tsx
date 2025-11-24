@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import {
   Loader2,
   FileDown,
@@ -289,7 +289,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
         // Update local state
         setEntries(
           entries.map((entry) => {
-            if (entry._id === entryId) {
+            if (entry.id === entryId) {
               const paidDate = new Date()
               const daysCount = differenceInDays(paidDate, new Date(entry.date))
               return {
@@ -306,14 +306,18 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
         )
 
         // Update unpaid entries list
-        setUnpaidEntries(unpaidEntries.filter((entry) => entry._id !== entryId))
+        setUnpaidEntries(unpaidEntries.filter((entry) => entry.id !== entryId))
 
         toast({
-          title: "Entry updated",
+          title: "Success",
           description: "Ledger entry marked as paid",
         })
       } else {
-        throw new Error(result.error || "Failed to update entry status")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to update entry status",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error marking entry as paid:", error)
@@ -359,7 +363,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
 
     setPaymentInAmount(entry.amount)
     setRemainingCredit(remainingToSettle)
-    setPaymentEntryId(entry._id)
+    setPaymentEntryId(entry.id)
     setShowSettlementDialog(true)
   }
 
@@ -381,7 +385,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
         },
         body: JSON.stringify({
           paymentEntryId,
-          unpaidEntryId: selectedUnpaidEntry._id,
+          unpaidEntryId: selectedUnpaidEntry.id,
           settlementAmount: amountToSettle,
           remainingCredit: isFullPayment ? remainingCredit - selectedUnpaidEntry.balance : 0,
           isFullPayment,
@@ -398,7 +402,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
       // Update UI based on settlement result
       if (isFullPayment) {
         // Full payment - update unpaid entries list
-        setUnpaidEntries(unpaidEntries.filter((entry) => entry._id !== selectedUnpaidEntry._id))
+        setUnpaidEntries(unpaidEntries.filter((entry) => entry.id !== selectedUnpaidEntry.id))
 
         // Update remaining credit
         const newRemainingCredit = remainingCredit - selectedUnpaidEntry.balance
@@ -535,14 +539,18 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
       const result = await deleteLedgerEntry(entryToDelete)
 
       if (result.success) {
-        setEntries(entries.filter((entry) => entry._id !== entryToDelete))
-        setUnpaidEntries(unpaidEntries.filter((entry) => entry._id !== entryToDelete))
+        setEntries(entries.filter((entry) => entry.id !== entryToDelete))
+        setUnpaidEntries(unpaidEntries.filter((entry) => entry.id !== entryToDelete))
         toast({
-          title: "Entry deleted",
-          description: "Ledger entry has been deleted successfully",
+          title: "Success",
+          description: result.message || "Ledger entry has been deleted successfully",
         })
       } else {
-        throw new Error(result.error || "Failed to delete entry")
+        toast({
+          title: result.unauthorized ? "Permission Denied" : "Error",
+          description: result.error || "Failed to delete entry",
+          variant: "destructive",
+        })
       }
     } catch (error: any) {
       console.error("Error deleting entry:", error)
@@ -645,15 +653,21 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-medium text-blue-800">Credit Information</h4>
-          <Button
+          {/* <Button
             size="sm"
             variant="outline"
-            onClick={() => setShowCreditSettings(!showCreditSettings)}
+            onClick={() => (InlineCreditSettings)}
             className="bg-white text-blue-700 border-blue-200 hover:bg-blue-100"
-          >
-            <CreditCard className="mr-2 h-4 w-4" />
-            {showCreditSettings ? "Hide Settings" : "Edit Settings"}
-          </Button>
+          > */}
+            <InlineCreditSettings
+              customerId={customerId}
+              initialSettings={creditSettings}
+              onSettingsUpdate={(newSettings: CreditSettings) => {
+                setCreditSettings(newSettings)
+                fetchData() // Refresh data with new settings
+              }}
+            />
+          {/* </Button> */}
         </div>
 
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
@@ -663,7 +677,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
             <span className="font-semibold">{creditSettings.interestRate}%</span>
           </p>
         </div>
-        {showCreditSettings && (
+        {/* {showCreditSettings && (
           <div className="mt-2">
             <InlineCreditSettings
               customerId={customerId}
@@ -674,7 +688,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
               }}
             />
           </div>
-        )}
+        )} */}
       </div>
 
       <div className="rounded-md border bg-card">
@@ -721,7 +735,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
             </TableHeader>
             <TableBody>
               {sortedEntries.map((entry, index) => (
-                <TableRow key={entry._id}>
+                <TableRow key={entry.id}>
                   <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell>
                     <Badge
@@ -781,7 +795,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleViewInvoice(entry._id.toString())}
+                        onClick={() => handleViewInvoice(entry.id.toString())}
                         title="View Invoice"
                       >
                         <Eye className="h-4 w-4" />
@@ -789,7 +803,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleDownloadInvoice(entry._id)}
+                        onClick={() => handleDownloadInvoice(entry.id)}
                         title="Download Invoice"
                       >
                         <FileDown className="h-4 w-4" />
@@ -798,7 +812,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleEditEntry(entry._id)}
+                          onClick={() => handleEditEntry(entry.id)}
                           title="Edit Entry"
                         >
                           <Edit className="h-4 w-4" />
@@ -808,7 +822,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => setEntryToDelete(entry._id)}
+                          onClick={() => setEntryToDelete(entry.id)}
                           title="Delete Entry"
                           className="text-red-500 hover:text-red-600"
                         >
@@ -819,7 +833,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleMarkAsPaid(entry._id)}
+                          onClick={() => handleMarkAsPaid(entry.id)}
                           className="text-green-600 border-green-200 hover:bg-green-50"
                         >
                           Mark Paid
@@ -881,9 +895,9 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
             <div className="space-y-2">
               <Label htmlFor="unpaidEntry">Select invoice to settle</Label>
               <Select
-                value={selectedUnpaidEntry?._id || ""}
+                value={selectedUnpaidEntry?.id || ""}
                 onValueChange={(value) => {
-                  const entry = unpaidEntries.find((e) => e._id === value)
+                  const entry = unpaidEntries.find((e) => e.id === value)
                   setSelectedUnpaidEntry(entry)
                 }}
               >
@@ -892,7 +906,7 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {unpaidEntries.map((entry) => (
-                    <SelectItem key={entry._id} value={entry._id}>
+                    <SelectItem key={entry.id} value={entry.id}>
                       Invoice #{entry.invoiceNumber} - ₹{entry.balance.toFixed(2)} ({entry.status})
                     </SelectItem>
                   ))}

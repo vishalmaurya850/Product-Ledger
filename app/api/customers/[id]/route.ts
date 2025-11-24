@@ -1,60 +1,41 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic" // Disable caching for this route
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Use companyId from session if available, otherwise fall back to user.id
     const resolvedParams = await context.params;
     const companyId = session.user.companyId || session.user.id;
-    const { db } = await connectToDatabase();
 
     console.log(`Fetching customer with ID: ${resolvedParams.id} for company: ${companyId}`)
 
-    let customer
-    try {
-      // Try to find the customer with the exact companyId
-      customer = await db.collection(collections.customers).findOne({
-        _id: new ObjectId(resolvedParams.id),
-        companyId,
-      })
-    } catch (error) {
-      console.error("Error parsing ObjectId:", error)
-      return NextResponse.json({ error: "Invalid customer ID format" }, { status: 400 })
-    }
+    const customer = await db.customer.findUnique({
+      where: { id: resolvedParams.id },
+      include: {
+        customerCreditSettings: true,
+        ledgerEntries: {
+          orderBy: { date: 'desc' },
+          take: 10,
+        }
+      }
+    })
 
-    // If not found, try without companyId filter as fallback
-    if (!customer) {
-      console.log("Customer not found with companyId filter, trying without filter")
-      customer = await db.collection(collections.customers).findOne({
-        _id: new ObjectId(resolvedParams.id),
-      })
-    }
-
-    if (!customer) {
+    if (!customer || customer.companyId !== companyId) {
       console.log("Customer not found")
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
 
-    console.log("Customer found:", { id: customer._id, name: customer.name })
+    console.log("Customer found:", { id: customer.id, name: customer.name })
 
-    // Convert ObjectId to string before returning
-    const serializedCustomer = {
-      ...customer,
-      _id: customer._id.toString(),
-    }
-
-    return NextResponse.json(serializedCustomer, {
+    return NextResponse.json(customer, {
       headers: {
         "Cache-Control": "no-store, max-age=0",
         Pragma: "no-cache",
@@ -68,34 +49,43 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
     const resolvedParams = await context.params;
-    // const companyId = session.user.companyId || session.user.id;
-    const { db } = await connectToDatabase();
+    const companyId = session.user.companyId || session.user.id;
     const data = await request.json();
 
-    // Add timestamps
-    const customer = {
-      ...data,
-      updatedAt: new Date(),
-    }
+    // Verify customer belongs to company
+    const existing = await db.customer.findUnique({
+      where: { id: resolvedParams.id },
+      select: { companyId: true }
+    })
 
-    const result = await db
-      .collection(collections.customers)
-      .updateOne({ _id: new ObjectId(resolvedParams.id) }, { $set: customer })
-
-    if (result.matchedCount === 0) {
+    if (!existing || existing.companyId !== companyId) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
 
+    const customer = await db.customer.update({
+      where: { id: resolvedParams.id },
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        panCard: data.panCard,
+        aadharCard: data.aadharCard,
+        imageUrl: data.imageUrl,
+      }
+    })
+
     return NextResponse.json({
       success: true,
-      id: resolvedParams.id,
+      id: customer.id,
+      customer,
     })
   } catch (error) {
     console.error("Failed to update customer:", error)
@@ -105,23 +95,28 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
     const resolvedParams = await context.params;
-    // const companyId = session.user.companyId || session.user.id;
-    const { db } = await connectToDatabase();
+    const companyId = session.user.companyId || session.user.id;
 
-    const result = await db.collection(collections.customers).deleteOne({
-      _id: new ObjectId(resolvedParams.id),
+    // Verify customer belongs to company before deleting
+    const existing = await db.customer.findUnique({
+      where: { id: resolvedParams.id },
+      select: { companyId: true }
     })
 
-    if (result.deletedCount === 0) {
+    if (!existing || existing.companyId !== companyId) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
+
+    await db.customer.delete({
+      where: { id: resolvedParams.id },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

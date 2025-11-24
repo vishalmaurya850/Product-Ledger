@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { updateUser } from "@/lib/actions"
 import { availablePermissions } from "@/lib/permissions" // Import from permissions.ts instead of db.ts
 
@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 interface EditUserFormProps {
   user: {
-    _id: string
+    id: string
     name: string
     email: string
     role: "admin" | "user"
@@ -42,6 +42,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       name: user.name,
       email: user.email,
@@ -70,17 +71,22 @@ export function EditUserForm({ user }: EditUserFormProps) {
         formData.append("permissions", permission)
       })
 
-      const result = await updateUser(user._id, formData)
+      const result = await updateUser(user.id, formData)
 
       if (result.success) {
         toast({
-          title: "User updated",
-          description: "The user has been updated successfully",
+          title: "Success",
+          description: result.message || "The user has been updated successfully",
         })
         router.push("/admin/users")
-      } else {
-        throw new Error(result.error || "Failed to update user")
+        return
       }
+      
+      toast({
+        title: result.unauthorized ? "Permission Denied" : "Error",
+        description: result.error || "Failed to update user",
+        variant: "destructive",
+      })
     } catch (error: any) {
       console.error("Error updating user:", error)
       toast({
@@ -91,6 +97,18 @@ export function EditUserForm({ user }: EditUserFormProps) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  function onError(errors: any) {
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ")
+    
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    })
   }
 
   // Group permissions by module
@@ -104,7 +122,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField
             control={form.control}

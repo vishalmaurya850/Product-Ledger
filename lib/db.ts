@@ -1,173 +1,55 @@
-import { MongoClient, type ObjectId } from "mongodb"
+import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
+import 'dotenv/config'
 
-// MongoDB connection string from environment variables
-const MONGODB_URI = process.env.MONGODB_URI || ""
-const MONGODB_DB = process.env.MONGODB_DB || "product_ledger"
+const connectionString = process.env.DATABASE_URL ?? ""
+const pool = new Pool({ connectionString })
+const adapter = new PrismaPg(pool)
 
-// Cache the MongoDB connection
-let cachedClient: MongoClient | null = null
-let cachedDb: any = null
-
-export async function connectToDatabase() {
-  // If we have a cached connection, use it
-  if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb }
-  }
-
-  // If no cached connection, create a new one
-  if (!MONGODB_URI) {
-    throw new Error("Please define the MONGODB_URI environment variable")
-  }
-
-  try {
-    const client = new MongoClient(MONGODB_URI)
-
-    await client.connect()
-    const db = client.db(MONGODB_DB)
-
-    // Cache the connection
-    cachedClient = client
-    cachedDb = db
-
-    return { client, db }
-  } catch (error) {
-    console.error("Failed to connect to MongoDB:", error)
-    throw new Error("Could not connect to database")
-  }
+declare global {
+  var prisma: PrismaClient | undefined
 }
 
-// Define collection names
-export const collections = {
-  ledger: "ledger",
-  products: "products",
-  customers: "customers",
-  customerSettings: "customerSettings",
-  users: "users",
-  passwordResets: "passwordResets",
-  permissions: "permissions",
-  companies: "companies",
-  overdueSettings: "overdueSettings",
-}
+export const db = globalThis.prisma || new PrismaClient({ adapter })
 
-// Import permissions from separate file
-import { availablePermissions } from "./permissions"
-export { availablePermissions }
+if (process.env.NODE_ENV !== "production") globalThis.prisma = db
 
-// Schema for a ledger entry
-export interface LedgerEntry {
-  _id?: ObjectId
-  customerId: ObjectId
-  type: "Sell" | "Payment In" | "Payment Out" | "Partial Payment"
-  invoiceNumber: string
-  amount: number
-  date: Date
-  product?: string
-  description: string
-  status: "Paid" | "Unpaid" | "Overdue"
-  paidDate?: Date
-  daysCount?: number
-  notes?: string
-  createdAt: Date
-  updatedAt: Date
-  companyId: string
-  createdBy: string
-  // Partial payment fields
-  partiallyPaid?: boolean
-  partialPaymentAmount?: number
-  partialPaymentDate?: Date
-  remainingAmount?: number
-  paidInterest?: number
-  relatedEntryId?: ObjectId
-  partialPaymentId?: ObjectId
-}
+// Export Prisma types
+export type {
+  LedgerEntry,
+  Product,
+  Customer,
+  CustomerCreditSettings,
+  User,
+  Company,
+  Permission,
+  PasswordReset
+} from "@prisma/client"
 
-// Schema for a product
-export interface Product {
-  _id?: ObjectId
-  name: string
-  sku: string
-  description?: string
-  price: number
-  stock: number
-  category: string
-  createdAt: Date
-  updatedAt: Date
-  companyId: string
-  createdBy: string
-}
-
-// Schema for a customer
-export interface Customer {
-  _id?: ObjectId
-  name: string
-  email: string
-  phone: string
-  address: string
-  panCard?: string
-  aadharCard?: string
-  imageUrl?: string
-  createdAt: Date
-  updatedAt: Date
-  companyId: string
-  createdBy: string
-}
-
-// Schema for customer credit settings
-export interface CustomerCreditSettings {
-  _id?: ObjectId
-  customerId: ObjectId
-  creditLimit: number
-  gracePeriod: number
-  interestRate: number
-  companyId: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-// User schema
-export interface User {
-  _id?: ObjectId
-  name: string
-  email: string
-  password: string
-  companyId: string
-  role: "admin" | "user"
-  permissions: string[]
-  createdAt: Date
-  updatedAt: Date
-  createdBy?: string
-}
-
-// Company schema
-export interface Company {
-  _id?: ObjectId
-  name: string
-  address?: string
-  phone?: string
-  email?: string
-  website?: string
-  logo?: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-// Permission schema
-export interface Permission {
-  _id?: ObjectId
-  name: string
-  description: string
-  module: "ledger" | "products" | "customers" | "users" | "reports" | "settings"
-  action: "view" | "create" | "edit" | "delete"
-}
-
-// Password reset schema
-export interface PasswordReset {
-  _id?: ObjectId
-  userId: ObjectId
-  token: string
-  expires: Date
-  createdAt: Date
-}
+// Available permissions for the application
+export const availablePermissions = [
+  { name: "dashboard_view", description: "View Dashboard", module: "dashboard", action: "view" },
+  { name: "ledger_view", description: "View Ledger", module: "ledger", action: "view" },
+  { name: "ledger_create", description: "Create Ledger Entry", module: "ledger", action: "create" },
+  { name: "ledger_edit", description: "Edit Ledger Entry", module: "ledger", action: "edit" },
+  { name: "ledger_delete", description: "Delete Ledger Entry", module: "ledger", action: "delete" },
+  { name: "products_view", description: "View Products", module: "products", action: "view" },
+  { name: "products_create", description: "Create Product", module: "products", action: "create" },
+  { name: "products_edit", description: "Edit Product", module: "products", action: "edit" },
+  { name: "products_delete", description: "Delete Product", module: "products", action: "delete" },
+  { name: "customers_view", description: "View Customers", module: "customers", action: "view" },
+  { name: "customers_create", description: "Create Customer", module: "customers", action: "create" },
+  { name: "customers_edit", description: "Edit Customer", module: "customers", action: "edit" },
+  { name: "customers_delete", description: "Delete Customer", module: "customers", action: "delete" },
+  { name: "users_view", description: "View Users", module: "users", action: "view" },
+  { name: "users_create", description: "Create User", module: "users", action: "create" },
+  { name: "users_edit", description: "Edit User", module: "users", action: "edit" },
+  { name: "users_delete", description: "Delete User", module: "users", action: "delete" },
+  { name: "reports_view", description: "View Reports", module: "reports", action: "view" },
+  { name: "settings_view", description: "View Settings", module: "settings", action: "view" },
+  { name: "settings_edit", description: "Edit Settings", module: "settings", action: "edit" },
+]
 
 // Generate a 6-digit invoice number
 export function generateInvoiceNumber(): string {
@@ -194,7 +76,7 @@ export function calculateInterest(amount: number, daysOverdue: number, interestR
 }
 
 // Calculate days count (for paid entries, it's the days until payment)
-export function calculateDaysCount(date: Date, paidDate?: Date): number {
+export function calculateDaysCount(date: Date, paidDate?: Date | null): number {
   const startDate = new Date(date)
   const endDate = paidDate ? new Date(paidDate) : new Date()
 

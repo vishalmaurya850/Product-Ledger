@@ -1,3 +1,6 @@
+'use client'
+
+import { motion } from "framer-motion"
 import { Check } from "lucide-react"
 import Link from "next/link"
 
@@ -6,8 +9,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export function LandingPricing() {
   return (
-    <section id="pricing" className="w-full py-12 md:py-24 lg:py-32">
-      <div className="container px-4 md:px-6">
+    <motion.section
+      id="pricing"
+      className="w-full py-12 md:py-24 lg:py-32"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      <div className="container px-4 mx-auto md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
             <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">Pricing</div>
@@ -17,8 +26,10 @@ export function LandingPricing() {
             </p>
           </div>
         </div>
+
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="flex flex-col">
+          {/* Starter Plan */}
+          <Card className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <CardHeader>
               <CardTitle>Starter</CardTitle>
               <CardDescription>Perfect for small businesses just getting started.</CardDescription>
@@ -29,35 +40,21 @@ export function LandingPricing() {
             </CardHeader>
             <CardContent className="flex-1">
               <ul className="space-y-2">
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Up to 500 ledger entries</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Up to 100 products</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Up to 50 customers</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Basic reports</span>
-                </li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 500 ledger entries</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 100 products</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 50 customers</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Basic reports</li>
               </ul>
             </CardContent>
             <CardFooter>
-              <Link href="/auth/register" className="w-full">
-                <Button className="w-full">Get Started</Button>
-              </Link>
+              <Link href="/auth/register" className="w-full"><Button className="w-full">Get Started</Button></Link>
             </CardFooter>
           </Card>
-          <Card className="flex flex-col border-primary">
+
+          {/* Business Plan */}
+          <Card className="flex flex-col border-primary transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <CardHeader>
-              <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
-                Popular
-              </div>
+              <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">Popular</div>
               <CardTitle className="mt-4">Business</CardTitle>
               <CardDescription>For growing businesses with more needs.</CardDescription>
               <div className="mt-4 flex items-baseline">
@@ -67,35 +64,20 @@ export function LandingPricing() {
             </CardHeader>
             <CardContent className="flex-1">
               <ul className="space-y-2">
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Unlimited ledger entries</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Up to 1,000 products</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Up to 500 customers</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Advanced reports</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Email notifications</span>
-                </li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Unlimited ledger entries</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 1,000 products</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 500 customers</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Advanced reports</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Email notifications</li>
               </ul>
             </CardContent>
             <CardFooter>
-              <Link href="/auth/register" className="w-full">
-                <Button className="w-full">Get Started</Button>
-              </Link>
+              <Link href="/auth/register" className="w-full"><Button className="w-full">Get Started</Button></Link>
             </CardFooter>
           </Card>
-          <Card className="flex flex-col">
+
+          {/* Enterprise Plan */}
+          <Card className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <CardHeader>
               <CardTitle>Enterprise</CardTitle>
               <CardDescription>For large businesses with complex requirements.</CardDescription>
@@ -106,36 +88,19 @@ export function LandingPricing() {
             </CardHeader>
             <CardContent className="flex-1">
               <ul className="space-y-2">
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Unlimited everything</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Priority support</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Custom integrations</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>Dedicated account manager</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  <span>On-premise deployment option</span>
-                </li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Unlimited everything</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Priority support</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Custom integrations</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Dedicated account manager</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />On-premise deployment option</li>
               </ul>
             </CardContent>
             <CardFooter>
-              <Link href="/auth/register" className="w-full">
-                <Button className="w-full">Contact Sales</Button>
-              </Link>
+              <Link href="/auth/register" className="w-full"><Button className="w-full">Contact Sales</Button></Link>
             </CardFooter>
           </Card>
         </div>
       </div>
-    </section>
+    </motion.section>
   )
 }

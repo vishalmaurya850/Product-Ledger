@@ -12,7 +12,7 @@ interface RecentSalesProps {
 
 export function RecentSales({ companyId }: RecentSalesProps) {
   interface Sale {
-    _id: string
+    id: string
     customer: {
       name: string
     }
@@ -64,7 +64,7 @@ export function RecentSales({ companyId }: RecentSalesProps) {
   return (
     <div className="space-y-8">
       {recentSales.map((sale) => (
-        <div key={sale._id} className="flex items-center">
+        <div key={sale.id} className="flex items-center">
           <Avatar className="h-9 w-9">
             <AvatarFallback>
               {sale.customer.name

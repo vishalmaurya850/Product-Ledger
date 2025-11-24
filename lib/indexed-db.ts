@@ -9,7 +9,7 @@ const DB_VERSION = 1
 // Define object stores with their configurations
 const STORES = {
   ledger: {
-    keyPath: "_id",
+    keyPath: "id",
     indices: [
       { name: "by-customer", keyPath: "customerId", unique: false },
       { name: "by-type", keyPath: "type", unique: false },
@@ -19,7 +19,7 @@ const STORES = {
     ],
   },
   customers: {
-    keyPath: "_id",
+    keyPath: "id",
     indices: [
       { name: "by-name", keyPath: "name", unique: false },
       { name: "by-email", keyPath: "email", unique: false },
@@ -27,7 +27,7 @@ const STORES = {
     ],
   },
   products: {
-    keyPath: "_id",
+    keyPath: "id",
     indices: [
       { name: "by-name", keyPath: "name", unique: false },
       { name: "by-category", keyPath: "category", unique: false },
@@ -35,7 +35,7 @@ const STORES = {
     ],
   },
   settings: {
-    keyPath: "_id",
+    keyPath: "id",
     indices: [],
   },
   sync_queue: {
@@ -56,7 +56,7 @@ interface ProductLedgerDB extends DBSchema {
   ledger: {
     key: string
     value: {
-      _id: string
+      id: string
       companyId: string
       customerId: string
       productId?: string
@@ -82,7 +82,7 @@ interface ProductLedgerDB extends DBSchema {
   customers: {
     key: string
     value: {
-      _id: string
+      id: string
       companyId: string
       name: string
       email: string
@@ -109,7 +109,7 @@ interface ProductLedgerDB extends DBSchema {
   products: {
     key: string
     value: {
-      _id: string
+      id: string
       companyId: string
       name: string
       description: string
@@ -130,7 +130,7 @@ interface ProductLedgerDB extends DBSchema {
   settings: {
     key: string
     value: {
-      _id: string
+      id: string
       companyId: string
       overdueSettings: {
         gracePeriod: number
@@ -193,7 +193,7 @@ class IndexedDBManager {
         upgrade(db) {
           // Ledger store
           if (!db.objectStoreNames.contains("ledger")) {
-            const ledgerStore = db.createObjectStore("ledger", { keyPath: "_id" })
+            const ledgerStore = db.createObjectStore("ledger", { keyPath: "id" })
             ledgerStore.createIndex("by-customer", "customerId")
             ledgerStore.createIndex("by-type", "type")
             ledgerStore.createIndex("by-status", "status")
@@ -203,7 +203,7 @@ class IndexedDBManager {
 
           // Customers store
           if (!db.objectStoreNames.contains("customers")) {
-            const customersStore = db.createObjectStore("customers", { keyPath: "_id" })
+            const customersStore = db.createObjectStore("customers", { keyPath: "id" })
             customersStore.createIndex("by-name", "name")
             customersStore.createIndex("by-email", "email")
             customersStore.createIndex("by-company", "companyId")
@@ -211,7 +211,7 @@ class IndexedDBManager {
 
           // Products store
           if (!db.objectStoreNames.contains("products")) {
-            const productsStore = db.createObjectStore("products", { keyPath: "_id" })
+            const productsStore = db.createObjectStore("products", { keyPath: "id" })
             productsStore.createIndex("by-name", "name")
             productsStore.createIndex("by-category", "category")
             productsStore.createIndex("by-company", "companyId")
@@ -219,7 +219,7 @@ class IndexedDBManager {
 
           // Settings store
           if (!db.objectStoreNames.contains("settings")) {
-            db.createObjectStore("settings", { keyPath: "_id" })
+            db.createObjectStore("settings", { keyPath: "id" })
           }
 
           // Sync queue store
@@ -319,7 +319,7 @@ class IndexedDBManager {
 
         // Add to sync queue if online
         if (this.isOnline) {
-          await this.addToSyncQueue("delete", storeName as string, { _id: id })
+          await this.addToSyncQueue("delete", storeName as string, { id: id })
         }
       }
     } catch (error) {
@@ -397,7 +397,7 @@ class IndexedDBManager {
     if (!this.db) return
 
     const queueItem = {
-      id: `${operation}_${storeName}_${data._id}_${Date.now()}`,
+      id: `${operation}_${storeName}_${data.id}_${Date.now()}`,
       operation,
       storeName,
       data,
@@ -434,7 +434,7 @@ class IndexedDBManager {
     // Update status to syncing
     await this.db.put("sync_queue", { ...item, status: "syncing" })
 
-    const endpoint = this.getApiEndpoint(item.storeName, item.operation, item.data._id)
+    const endpoint = this.getApiEndpoint(item.storeName, item.operation, item.data.id)
     const method = this.getHttpMethod(item.operation)
 
     const response = await fetch(endpoint, {
@@ -454,7 +454,7 @@ class IndexedDBManager {
 
     // Update last synced timestamp in the original item
     if (item.operation !== "delete") {
-      const originalItem = await this.db.get(item.storeName as any, item.data._id)
+      const originalItem = await this.db.get(item.storeName as any, item.data.id)
       if (originalItem) {
         await this.db.put(item.storeName as any, {
           ...originalItem,
@@ -595,7 +595,7 @@ class IndexedDBManager {
             await store.put(op.data)
             break
           case "delete":
-            const item = await store.get(op.data._id)
+            const item = await store.get(op.data.id)
             if (item) {
               await store.put({ ...item, isDeleted: true, updatedAt: new Date() })
             }

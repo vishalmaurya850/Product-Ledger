@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { updateLedgerEntry } from "@/lib/actions"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +32,7 @@ const formSchema = z.object({
 
 interface EditLedgerEntryFormProps {
   entry: {
-    _id: string
+    id: string
     customerId: string
     type: "Sell" | "Payment In" | "Payment Out"
     date: string
@@ -44,11 +44,11 @@ interface EditLedgerEntryFormProps {
     paidDate?: string
   }
   customers: Array<{
-    _id: string
+    id: string
     name: string
   }>
   products: Array<{
-    _id: string
+    id: string
     name: string
   }>
 }
@@ -59,6 +59,7 @@ export function EditLedgerEntryForm({ entry, customers, products }: EditLedgerEn
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       customerId: entry.customerId,
       type: entry.type,
@@ -70,6 +71,17 @@ export function EditLedgerEntryForm({ entry, customers, products }: EditLedgerEn
       notes: entry.notes || "",
     },
   })
+
+  function onError(errors: any) {
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ")
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    })
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
@@ -91,7 +103,7 @@ export function EditLedgerEntryForm({ entry, customers, products }: EditLedgerEn
         formData.append("notes", values.notes)
       }
 
-      const result = await updateLedgerEntry(entry._id, formData)
+      const result = await updateLedgerEntry(entry.id, formData)
 
       if (result.success) {
         toast({
@@ -116,7 +128,7 @@ export function EditLedgerEntryForm({ entry, customers, products }: EditLedgerEn
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField
             control={form.control}
@@ -132,7 +144,7 @@ export function EditLedgerEntryForm({ entry, customers, products }: EditLedgerEn
                   </FormControl>
                   <SelectContent>
                     {customers.map((customer) => (
-                      <SelectItem key={customer._id} value={customer._id}>
+                      <SelectItem key={customer.id} value={customer.id}>
                         {customer.name}
                       </SelectItem>
                     ))}
@@ -269,7 +281,7 @@ export function EditLedgerEntryForm({ entry, customers, products }: EditLedgerEn
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {products.map((product) => (
-                      <SelectItem key={product._id} value={product.name}>
+                      <SelectItem key={product.id} value={product.name}>
                         {product.name}
                       </SelectItem>
                     ))}

@@ -15,6 +15,7 @@ export function OverdueReport() {
     creditLimit: 10000,
     gracePeriod: 30,
     interestRate: 18,
+    fineAmount: 0,
   })
   const [showSettings, setShowSettings] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)

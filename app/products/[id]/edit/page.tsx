@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -45,6 +45,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       name: "",
       sku: "",
@@ -139,13 +140,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
       if (result.success) {
         toast({
-          title: "Product updated",
-          description: "Your product has been updated successfully.",
+          title: "Success",
+          description: result.message || "Your product has been updated successfully.",
         });
         router.push(`/products/${resolvedParams?.id}/view`);
-      } else {
-        throw new Error(result.error || "Failed to update product");
+        return;
       }
+      
+      toast({
+        title: result.unauthorized ? "Permission Denied" : "Error",
+        description: result.error || "Failed to update product",
+        variant: "destructive",
+      });
     } catch (error) {
       console.error("Error updating product:", error);
       toast({
@@ -156,6 +162,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function onError(errors: any) {
+    console.log("Form validation errors:", errors);
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ");
+    
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    });
   }
 
   if (isLoading) {
@@ -226,7 +245,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           <CardDescription>Update your product information</CardDescription>
         </CardHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)}>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField

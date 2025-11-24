@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { createProduct } from "@/lib/actions"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
@@ -40,6 +40,7 @@ export default function NewProductPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onSubmit",
     defaultValues: {
       name: "",
       sku: "",
@@ -63,13 +64,18 @@ export default function NewProductPage() {
 
       if (result.success) {
         toast({
-          title: "Product created",
-          description: "Your product has been created successfully.",
+          title: "Success",
+          description: result.message || "New product has been added successfully",
         })
         router.push("/admin/products")
-      } else {
-        throw new Error(result.error || "Failed to create product")
+        return
       }
+      
+      toast({
+        title: result.unauthorized ? "Permission Denied" : "Error",
+        description: result.error || "Failed to create product",
+        variant: "destructive",
+      })
     } catch (error) {
       console.error("Error creating product:", error)
       toast({
@@ -80,6 +86,19 @@ export default function NewProductPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  function onError(errors: any) {
+    console.log("Form validation errors:", errors)
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .join(", ")
+    
+    toast({
+      title: "Validation Error",
+      description: errorMessages || "Please check all required fields",
+      variant: "destructive",
+    })
   }
 
   return (
@@ -93,7 +112,7 @@ export default function NewProductPage() {
           <CardDescription>Add a new product to your inventory</CardDescription>
         </CardHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit, onError)}>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField

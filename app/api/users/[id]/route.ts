@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server"
-import { connectToDatabase, collections } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { ObjectId } from "mongodb"
+import { db } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -18,15 +16,23 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     const companyId = session.user.companyId
-    const { db } = await connectToDatabase()
 
     // Get user by ID and ensure they belong to the same company
-    const user = await db.collection(collections.users).findOne(
-      { _id: new ObjectId(params.id), companyId },
-      { projection: { password: 0 } }, // Exclude password
-    )
+    const user = await db.user.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        companyId: true,
+        permissions: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    })
 
-    if (!user) {
+    if (!user || user.companyId !== companyId) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 

@@ -3,12 +3,14 @@ import { InvoiceContent } from "@/components/invoices/invoice-content"
 import { Loader2 } from "lucide-react"
 
 interface InvoicePageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function InvoicePage({ params }: InvoicePageProps) {
+export default async function InvoicePage({ params }: InvoicePageProps) {
+  const { id } = await params
+  
   return (
     <div className="container mx-auto py-8">
       <Suspense
@@ -18,7 +20,7 @@ export default function InvoicePage({ params }: InvoicePageProps) {
           </div>
         }
       >
-        <InvoiceContent invoiceId={params.id} />
+        <InvoiceContent invoiceId={id} />
       </Suspense>
     </div>
   )
