@@ -22,6 +22,8 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Add empty turbopack config to silence Next.js 16 warning
+  turbopack: {},
   async headers() {
     return [
       {
