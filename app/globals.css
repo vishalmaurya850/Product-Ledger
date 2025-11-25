@@ -92,3 +92,89 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for professional invoices */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  .print\:bg-white {
+    background: white !important;
+  }
+  
+  .print\:text-gray-600 {
+    color: #4b5563 !important;
+  }
+  
+  .print\:text-gray-500 {
+    color: #6b7280 !important;
+  }
+  
+  .print\:text-gray-700 {
+    color: #374151 !important;
+  }
+  
+  .print\:text-green-700 {
+    color: #15803d !important;
+  }
+  
+  .print\:bg-gray-50 {
+    background: #f9fafb !important;
+  }
+  
+  .print\:bg-gray-100 {
+    background: #f3f4f6 !important;
+  }
+  
+  .print\:border-gray-300 {
+    border-color: #d1d5db !important;
+  }
+  
+  .print\:border-0 {
+    border: 0 !important;
+  }
+  
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+  
+  .print\:border {
+    border-width: 1px !important;
+  }
+  
+  .print\:hover\:bg-white:hover {
+    background: white !important;
+  }
+  
+  /* Remove shadows and rounded corners for print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ensure proper page breaks */
+  .invoice-page {
+    page-break-inside: avoid;
+  }
+  
+  /* Optimize table printing */
+  table {
+    page-break-inside: auto;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  /* Set proper margins for print */
+  @page {
+    margin: 1cm;
+  }
+}

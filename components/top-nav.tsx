@@ -71,7 +71,7 @@ export function TopNav({ companyName }: { companyName?: string | null }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin/profile">Profile</Link>
+              <Link href={session?.user?.role === "admin" ? "/admin/profile" : "/profile"}>Profile</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/settings">Settings</Link>

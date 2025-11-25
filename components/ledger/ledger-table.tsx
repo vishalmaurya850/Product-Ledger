@@ -801,14 +801,14 @@ export function LedgerTable({ customerId, userPermissions }: LedgerTableProps) {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
+                      {/* <Button
                         variant="outline"
                         size="icon"
                         onClick={() => handleDownloadInvoice(entry.id)}
                         title="Download Invoice"
                       >
                         <FileDown className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                       {canEdit && (
                         <Button
                           variant="outline"
