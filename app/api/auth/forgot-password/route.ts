@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
-import { generatePasswordResetToken } from "@/lib/auth"
+import { db } from "@/lib/db"
+import crypto from "crypto"
+import { sendOtpEmail } from "@/lib/mail"
 
 export async function POST(request: Request) {
   try {
@@ -9,26 +11,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
-    // Generate token
-    const { token, email: userEmail } = await generatePasswordResetToken(email)
+    const normalizedEmail = email.toLowerCase()
 
-    // Create reset link
-    const resetLink = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`
-
-    // Send email with reset link
-    await fetch(`${process.env.NEXTAUTH_URL}/api/email/reset-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email: userEmail, resetLink }),
+    // Check if user exists
+    const user = await db.user.findUnique({
+      where: { email: normalizedEmail },
     })
 
+    // If user exists, generate OTP and send email
+    if (user) {
+      const otp = crypto.randomInt(100000, 999999).toString()
+      const expires = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+
+      // Delete existing tokens
+      await db.verificationToken.deleteMany({
+        where: { identifier: normalizedEmail },
+      })
+
+      // Create new token
+      await db.verificationToken.create({
+        data: {
+          identifier: normalizedEmail,
+          token: otp,
+          expires,
+        },
+      })
+
+      // Send email
+      await sendOtpEmail(normalizedEmail, otp, "reset")
+    }
+
     // Always return success to prevent email enumeration attacks
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: "If an account exists, a reset code has been sent." })
   } catch (error) {
     console.error("Password reset error:", error)
-    // Always return success to prevent email enumeration attacks
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: "If an account exists, a reset code has been sent." })
   }
 }

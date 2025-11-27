@@ -1,9 +1,14 @@
-import NextAuth from "next-auth"
+import NextAuth, { AuthError } from "next-auth"
 import type { NextAuthConfig } from "next-auth"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { v4 as uuidv4 } from "uuid"
 import Credentials from "next-auth/providers/credentials"
+
+class EmailNotVerifiedError extends AuthError {
+  code = "email_not_verified"
+  message = "Email not verified"
+}
 
 export const authConfig: NextAuthConfig = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -28,6 +33,10 @@ export const authConfig: NextAuthConfig = {
         })
 
         if (!user) return null
+
+        if (!user.emailVerified) {
+          throw new EmailNotVerifiedError()
+        }
 
         const isPasswordValid = await bcrypt.compare(credentials.password as string, user.password)
 

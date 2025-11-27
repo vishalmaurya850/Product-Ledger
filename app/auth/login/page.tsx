@@ -37,9 +37,16 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
+        let errorMessage = "Invalid email or password. Please try again."
+        
+        // Check for specific error codes or messages
+        if (result.code === "email_not_verified" || result.error === "email_not_verified" || result.error.includes("Email not verified")) {
+          errorMessage = "Your email is not verified. Please check your email for the verification code."
+        }
+
         toast({
           title: "Login failed",
-          description: "Invalid email or password. Please try again.",
+          description: errorMessage,
           variant: "destructive",
         })
         setIsLoading(false)

@@ -24,7 +24,8 @@ export type {
   User,
   Company,
   Permission,
-  PasswordReset
+  PasswordReset,
+  VerificationToken
 } from "@prisma/client"
 
 // Available permissions for the application

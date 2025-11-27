@@ -4,17 +4,18 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function ForgotPasswordPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -37,7 +38,14 @@ export default function ForgotPasswordPage() {
         throw new Error(data.error || "Failed to send reset email")
       }
 
-      setEmailSent(true)
+      toast({
+        title: "Request Sent",
+        description: "If an account exists, a reset code has been sent.",
+      })
+      
+      // Redirect to reset password page with email
+      router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`)
+      
     } catch (error) {
       console.error("Password reset error:", error)
       toast({
@@ -62,42 +70,27 @@ export default function ForgotPasswordPage() {
             <Package className="h-10 w-10" />
           </div>
           <CardTitle className="text-2xl">Reset Password</CardTitle>
-          <CardDescription>Enter your email to receive a password reset link</CardDescription>
+          <CardDescription>Enter your email to receive a password reset code</CardDescription>
         </CardHeader>
-        {emailSent ? (
-          <CardContent className="space-y-4 text-center">
-            <div className="bg-green-50 p-4 rounded-md">
-              <p className="text-green-800">
-                If an account exists with this email, you will receive a password reset link shortly.
-              </p>
-            </div>
-            <div className="mt-4">
-              <Link href="/auth/login" className="text-primary hover:underline">
-                Return to login
-              </Link>
+        <form onSubmit={onSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" name="email" type="email" placeholder="name@example.com" required />
             </div>
           </CardContent>
-        ) : (
-          <form onSubmit={onSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="name@example.com" required />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Send Reset Link"}
-              </Button>
-              <div className="mt-4 text-center text-sm">
-                Remember your password?{" "}
-                <Link href="/auth/login" className="text-primary hover:underline">
-                  Sign in
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
-        )}
+          <CardFooter className="flex flex-col">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Sending..." : "Send Reset Code"}
+            </Button>
+            <div className="mt-4 text-center text-sm">
+              Remember your password?{" "}
+              <Link href="/auth/login" className="text-primary hover:underline">
+                Sign in
+              </Link>
+            </div>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   )

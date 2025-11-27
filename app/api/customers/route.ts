@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { validationSchemas, sanitizeObject, isValidEmail } from "@/lib/security"
 export const dynamic = "force-dynamic" // Disable caching for this route
 export async function GET() {
   try {
@@ -39,16 +40,31 @@ export async function POST(request: Request) {
     const companyId = session.user.companyId || session.user.id
     const userId = session.user.id
     console.log("Using companyId for new customer:", companyId)
-    const data = await request.json()
+    const rawData = await request.json()
+    
+    // Validate input
+    const validation = validationSchemas.customer.safeParse(rawData)
+    if (!validation.success) {
+      return NextResponse.json({ error: "Invalid input", details: validation.error.errors }, { status: 400 })
+    }
+    
+    // Additional email validation
+    if (validation.data.email && !isValidEmail(validation.data.email)) {
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
+    }
+    
+    // Sanitize data
+    const data = sanitizeObject(validation.data)
+    
     const customer = await db.customer.create({
       data: {
         name: data.name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        panCard: data.panCard,
-        aadharCard: data.aadharCard,
-        imageUrl: data.imageUrl,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        panCard: data.panCard || null,
+        aadharCard: data.aadharCard || null,
+        imageUrl: data.imageUrl || null,
         companyId,
         createdBy: userId,
       }

@@ -1,32 +1,21 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import bcrypt from "bcryptjs"
 
 export async function POST(request: Request) {
   try {
-    const { email, otp, password } = await request.json()
+    const { email, otp } = await request.json()
 
-    if (!email || !otp || !password) {
+    if (!email || !otp) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
-
-    // Strong password check
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
-    if (!passwordRegex.test(password)) {
-      return NextResponse.json({ 
-        error: "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character" 
-      }, { status: 400 })
     }
 
     const normalizedEmail = email.toLowerCase()
 
     // Find token
-    const verificationToken = await db.verificationToken.findUnique({
+    const verificationToken = await db.verificationToken.findFirst({
       where: {
-        identifier_token: {
-          identifier: normalizedEmail,
-          token: otp,
-        },
+        identifier: normalizedEmail,
+        token: otp,
       },
     })
 
@@ -34,6 +23,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid OTP" }, { status: 400 })
     }
 
+    // Check expiration
     if (new Date() > verificationToken.expires) {
       return NextResponse.json({ error: "OTP has expired" }, { status: 400 })
     }
@@ -47,14 +37,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    // Update user
+    // Verify user
     await db.user.update({
       where: { id: user.id },
       data: {
-        password: hashedPassword,
+        emailVerified: new Date(),
       },
     })
 
@@ -68,12 +55,10 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: "Email verified successfully" })
+
   } catch (error) {
-    console.error("Password reset error:", error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to reset password" },
-      { status: 500 },
-    )
+    console.error("Verification error:", error)
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 })
   }
 }

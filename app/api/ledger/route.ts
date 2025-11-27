@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { validationSchemas, sanitizeObject, validateNumber } from "@/lib/security"
 export const dynamic = "force-dynamic" // Disable caching for this route
 export async function GET() {
   try {
@@ -42,17 +43,33 @@ export async function POST(request: Request) {
     }
     const companyId = session.user.companyId || session.user.id
     const userId = session.user.id
-    const data = await request.json()
+    const rawData = await request.json()
+    
+    // Validate input
+    const validation = validationSchemas.ledgerEntry.safeParse(rawData)
+    if (!validation.success) {
+      return NextResponse.json({ error: "Invalid input", details: validation.error.errors }, { status: 400 })
+    }
+    
+    // Sanitize data
+    const data = sanitizeObject(validation.data)
+    
+    // Validate amount
+    const amount = validateNumber(data.amount, 0.01, 999999999)
+    if (amount === null) {
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 })
+    }
+    
     const entry = await db.ledgerEntry.create({
       data: {
         customerId: data.customerId,
         type: data.type,
         invoiceNumber: data.invoiceNumber || `INV-${Date.now()}`,
-        amount: Number(data.amount),
-        description: data.description,
+        amount: amount,
+        description: data.description || null,
         date: new Date(data.date),
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        status: data.status || "pending",
+        status: data.status || "Pending",
         companyId,
         createdBy: userId,
       },

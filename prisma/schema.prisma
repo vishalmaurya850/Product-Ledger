@@ -24,8 +24,17 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   String?
+  emailVerified DateTime?
 
   company Company @relation(fields: [companyId], references: [id])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Company {
