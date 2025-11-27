@@ -1,15 +1,40 @@
 'use client'
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
+import { useEffect, useRef } from "react"
 
 export function LandingHero() {
+  const leftRef = useRef<HTMLDivElement>(null)
+  const rightRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Trigger animations after component mounts
+    const timer = setTimeout(() => {
+      if (leftRef.current) {
+        leftRef.current.style.opacity = '1'
+        leftRef.current.style.transform = 'translateX(0)'
+      }
+      if (rightRef.current) {
+        rightRef.current.style.opacity = '1'
+        rightRef.current.style.transform = 'translateX(0)'
+      }
+    }, 50) // Small delay to ensure CSS is applied
+
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-background to-muted">
       <div className="container px-4 mx-auto md:px-6">
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:grid-cols-2">
-          <div className="flex flex-col justify-center space-y-4 animate-in fade-in slide-in-from-left duration-700">
+          <div 
+            ref={leftRef}
+            className="flex flex-col justify-center space-y-4 opacity-0 translate-x-[-20px] transition-all duration-700 ease-out"
+            style={{
+              transition: 'opacity 700ms ease-out, transform 700ms ease-out'
+            }}
+          >
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl transition-all duration-300 hover:text-primary/90">
                 Manage Your Business Finances with Ease
@@ -33,7 +58,13 @@ export function LandingHero() {
               </Link>
             </div>
           </div>
-          <div className="flex items-center justify-center animate-in fade-in slide-in-from-right duration-700 delay-300">
+          <div 
+            ref={rightRef}
+            className="flex items-center justify-center opacity-0 translate-x-[20px] transition-all duration-700 ease-out delay-300"
+            style={{
+              transition: 'opacity 700ms ease-out 300ms, transform 700ms ease-out 300ms'
+            }}
+          >
             <div className="relative w-full h-[400px] overflow-hidden rounded-lg border bg-background p-2 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] group">
               <img 
                 src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
