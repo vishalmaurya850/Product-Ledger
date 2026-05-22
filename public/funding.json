@@ -1,0 +1,110 @@
+{
+    "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+    "version": "v1.1.0",
+    "entity": {
+        "type": "organisation",
+        "role": "owner",
+        "name": "BONSOI Systems",
+        "email": "bonsoisystems@gmail.com",
+        "phone": "9628525211",
+        "description": "BONSOI Systems is a software development organization focused on building open source business management tools. We develop the Product Ledger Management System, a comprehensive full-stack application that helps product-selling companies manage their financial transactions, customer relationships, inventory, and overdue payments efficiently.",
+        "webpageUrl": {
+            "url": "https://product-ledger.vercel.app",
+            "wellKnown": ""
+        }
+    },
+    "projects": [
+        {
+            "guid": "product-ledger",
+            "name": "Product Ledger Management System",
+            "description": "A comprehensive business ledger management system for product-selling companies built with Next.js 16, Prisma ORM 7, and PostgreSQL. Features include real-time data synchronization with IndexedDB, intelligent overdue management with configurable interest rates, automated credit limit handling, PDF invoice generation, multi-tenant architecture with role-based access control, and offline-first capability.",
+            "webpageUrl": {
+                "url": "https://product-ledger.vercel.app",
+                "wellKnown": ""
+            },
+            "repositoryUrl": {
+                "url": "https://github.com/vishalmaurya850/Product-Ledger",
+                "wellKnown": ""
+            },
+            "licenses": [
+                "spdx:MIT"
+            ],
+            "tags": [
+                "business-management",
+                "ledger",
+                "accounting",
+                "nextjs",
+                "typescript",
+                "postgresql",
+                "invoicing",
+                "inventory-management",
+                "fintech",
+                "open-source"
+            ]
+        }
+    ],
+    "funding": {
+        "channels": [
+            {
+                "guid": "github-sponsors",
+                "type": "payment-provider",
+                "address": "https://github.com/sponsors/vishalmaurya850",
+                "description": "Support us through GitHub Sponsors. Recurring or one-time contributions accepted."
+            },
+            {
+                "guid": "bank-transfer",
+                "type": "bank",
+                "address": "",
+                "description": "For direct bank transfers, please contact us at bonsoisystems@gmail.com for details."
+            },
+            {
+                "guid": "paypal-transfer",
+                "type": "payment-provider",
+                "address": "",
+                "description": "For direct paypal transfers, please contact us at bonsoisystems@gmail.com for details."
+            }
+        ],
+        "plans": [
+            {
+                "guid": "infrastructure",
+                "status": "active",
+                "name": "Infrastructure and Hosting",
+                "description": "Covers monthly costs for database hosting, CI/CD pipelines, domain, and deployment infrastructure for the demo and documentation site.",
+                "amount": 49,
+                "currency": "USD",
+                "frequency": "monthly",
+                "channels": [
+                    "github-sponsors",
+                    "bank-transfer"
+                ]
+            },
+            {
+                "guid": "development",
+                "status": "active",
+                "name": "Development and Maintenance",
+                "description": "Supports ongoing development, bug fixes, security patches, dependency updates, and new feature development for the Product Ledger system.",
+                "amount": 149,
+                "currency": "USD",
+                "frequency": "monthly",
+                "channels": [
+                    "github-sponsors",
+                    "bank-transfer"
+                ]
+            },
+            {
+                "guid": "one-time-support",
+                "status": "active",
+                "name": "One-time Support",
+                "description": "Show your appreciation with a one-time contribution of any amount to support the project.",
+                "amount": 0,
+                "currency": "USD",
+                "frequency": "one-time",
+                "channels": [
+                    "github-sponsors",
+                    "bank-transfer"
+                ]
+            }
+        ],
+        "history": []
+    }
+}
