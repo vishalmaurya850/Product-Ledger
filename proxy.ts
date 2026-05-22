@@ -144,6 +144,11 @@ export default auth((req) => {
     return NextResponse.next()
   }
 
+  // Allow static files (json, txt, xml, etc.) at root level
+  if (/^\/.+\.(json|txt|xml|ico|svg|png|jpg|jpeg|gif|webp|woff|woff2|ttf|eot)$/.test(pathname)) {
+    return NextResponse.next()
+  }
+
   // API routes that don't require authentication
   if (
     pathname.startsWith("/api/auth") ||
@@ -233,5 +238,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|funding\\.json|.*\\.ico|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.webp).*)"],
 }

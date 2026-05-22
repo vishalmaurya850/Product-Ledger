@@ -25,8 +25,68 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Product Ledger - Business Management System",
-  description: "Manage your product inventory, ledger, and overdue payments",
+  title: {
+    default: "Product Ledger - Business Management System",
+    template: "%s | Product Ledger",
+  },
+  description: "Manage your product inventory, ledger, and overdue payments. A complete financial management system for businesses of all sizes with real-time tracking, automated interest calculation, and PDF invoicing.",
+  keywords: [
+    "product ledger",
+    "business management",
+    "inventory management",
+    "ledger management",
+    "overdue payments",
+    "invoice generation",
+    "financial tracking",
+    "cash flow management",
+    "customer management",
+    "small business software",
+    "accounting software",
+    "payment tracking",
+  ],
+  authors: [{ name: "BONSOI Systems", url: "https://bonsoi.vercel.app" }],
+  creator: "BONSOI Systems",
+  publisher: "BONSOI Systems",
+  metadataBase: new URL("https://product-ledger.vercel.app"),
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://product-ledger.vercel.app",
+    siteName: "Product Ledger",
+    title: "Product Ledger - Business Management System",
+    description: "Manage your product inventory, ledger, and overdue payments. A complete financial management system for businesses of all sizes.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Product Ledger - Business Management System",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Product Ledger - Business Management System",
+    description: "Manage your product inventory, ledger, and overdue payments. A complete financial management system for businesses of all sizes.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || "",
+  },
+  alternates: {
+    canonical: "https://product-ledger.vercel.app",
+  },
 }
 
 export default async function RootLayout({
