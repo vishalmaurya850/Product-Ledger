@@ -1,4 +1,5 @@
 {
     "dependi.npm.lockFileEnabled": true,
-    "postman.settings.dotenv-detection-notification-visibility": false
+    "postman.settings.dotenv-detection-notification-visibility": false,
+    "typescript.autoClosingTags": false
 }

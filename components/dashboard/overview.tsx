@@ -60,13 +60,13 @@ export function Overview({ companyId }: OverviewProps) {
           tickFormatter={(value) => `₹${value}`}
         />
         <Tooltip
-          formatter={(value: number) => [`₹${value.toFixed(2)}`, ""]}
+          formatter={(value: any) => [`₹${Number(value).toFixed(2)}`, ""]}
           labelFormatter={(label) => `Month: ${label}`}
         />
         <Legend />
-        <Bar dataKey="sales" name="Sales" fill="#adfa1d" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="payments" name="Payments" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="outstanding" name="Outstanding" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="sales" name="Sales" fill="#0066cc" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="payments" name="Payments" fill="#34c759" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="outstanding" name="Outstanding" fill="#ff9500" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )

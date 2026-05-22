@@ -16,7 +16,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const companyId = session.user.companyId || session.user.id;
+    const companyId = session.user.companyId;
 
     console.log(`Generating invoice for entry ID: ${resolvedParams.id}`);
 

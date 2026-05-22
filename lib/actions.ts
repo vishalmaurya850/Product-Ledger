@@ -23,14 +23,19 @@ async function getUserSession() {
   // Debug session data
   console.log("Session in getUserSession:", {
     userId: session.user.id,
-    companyId: session.user.companyId || session.user.id, // Use id as fallback
+    companyId: session.user.companyId,
     role: session.user.role,
     permissions: session.user.permissions?.length || 0,
   })
 
+  if (!session.user.companyId) {
+    console.error("Missing companyId in session for user:", session.user.id)
+    return null
+  }
+
   return {
     userId: session.user.id,
-    companyId: session.user.companyId || session.user.id, // Use id as fallback if companyId is missing
+    companyId: session.user.companyId,
     role: session.user.role,
     permissions: session.user.permissions || [],
   }

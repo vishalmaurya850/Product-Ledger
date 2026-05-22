@@ -13,9 +13,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
 
     const resolvedParams = await context.params;
-    const companyId = session.user.companyId || session.user.id;
-
-    console.log(`Fetching customer with ID: ${resolvedParams.id} for company: ${companyId}`)
+    const companyId = session.user.companyId;
 
     const customer = await db.customer.findUnique({
       where: { id: resolvedParams.id },
@@ -56,7 +54,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     }
 
     const resolvedParams = await context.params;
-    const companyId = session.user.companyId || session.user.id;
+    const companyId = session.user.companyId;
     const data = await request.json();
 
     // Verify customer belongs to company
@@ -102,7 +100,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     }
 
     const resolvedParams = await context.params;
-    const companyId = session.user.companyId || session.user.id;
+    const companyId = session.user.companyId;
 
     // Verify customer belongs to company before deleting
     const existing = await db.customer.findUnique({

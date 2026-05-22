@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -19,7 +20,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Get user by ID and ensure they belong to the same company
     const user = await db.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         email: true,

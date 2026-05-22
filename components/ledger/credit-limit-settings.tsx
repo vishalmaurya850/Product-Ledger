@@ -17,32 +17,54 @@ import { toast } from "sonner"
 import type { CreditSettings } from "@/components/ledger/ledger-table"
 
 
-interface InlineCreditSettingsProps {
+export interface InlineCreditSettingsProps {
   customerId: string
+  isCompanyLevel?: boolean
   initialSettings: CreditSettings
   onSettingsUpdate: (settings: CreditSettings) => void
 }
 
-export function InlineCreditSettings({ customerId, initialSettings, onSettingsUpdate }: InlineCreditSettingsProps) {
+export function InlineCreditSettings({ customerId, isCompanyLevel, initialSettings, onSettingsUpdate }: InlineCreditSettingsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [settings, setSettings] = useState<CreditSettings>({
     creditLimit: initialSettings?.creditLimit ?? 0,
     gracePeriod: initialSettings?.gracePeriod ?? 0,
     interestRate: initialSettings?.interestRate ?? 0,
-    fineAmount: initialSettings?.fineAmount ?? 0,
+    fineAmount: initialSettings?.fineAmount ?? initialSettings?.minimumFee ?? 0,
   })
 
   const handleSave = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/customers/${customerId}/credit-settings`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(settings),
-      })
+      // Determine if this is a company-level or customer-level settings update
+      const isCompany = isCompanyLevel || customerId === "company" || !customerId
+      
+      let response: Response
+      if (isCompany) {
+        // Save to company-level overdue settings
+        response = await fetch(`/api/overdue/settings`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            creditLimit: settings.creditLimit,
+            gracePeriod: settings.gracePeriod,
+            interestRate: settings.interestRate,
+            minimumFee: settings.fineAmount,
+          }),
+        })
+      } else {
+        // Save to customer-specific credit settings
+        response = await fetch(`/api/customers/${customerId}/credit-settings`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(settings),
+        })
+      }
 
       if (!response.ok) {
         throw new Error("Failed to update credit settings")

@@ -8,7 +8,7 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-    const companyId = session.user.companyId || session.user.id
+    const companyId = session.user.companyId
     // Get all customers for this company
     const customers = await db.customer.findMany({ where: { companyId } })
     // Get credit settings for each customer

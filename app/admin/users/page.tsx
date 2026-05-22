@@ -35,9 +35,14 @@ export default async function AdminUsersPage() {
   // Check if user can create new users
   const canCreateUsers = session.user.permissions?.includes("users_create")
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+    <div className="p-6 md:p-10 max-w-[1440px] mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-display-lg text-[var(--ink)]">User Management</h1>
+          <p className="text-[17px] tracking-[-0.374px] text-[var(--body-muted)] mt-1">
+            Manage users and their permissions.
+          </p>
+        </div>
         {canCreateUsers && (
           <Link href="/admin/users/new">
             <Button>
@@ -48,11 +53,7 @@ export default async function AdminUsersPage() {
         )}
       </div>
       <Card>
-        <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>Manage users and their permissions</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <AdminUsersTable users={JSON.parse(JSON.stringify(users))} />
         </CardContent>
       </Card>

@@ -33,16 +33,15 @@ export default async function AdminSettingsPage() {
   // Check if user can edit settings
   const canEdit = session.user.permissions?.includes("settings_edit")
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Company Settings</h2>
+    <div className="p-6 md:p-10 max-w-[1440px] mx-auto">
+      <div className="mb-8">
+        <h1 className="text-display-lg text-[var(--ink)]">Company Settings</h1>
+        <p className="text-[17px] tracking-[-0.374px] text-[var(--body-muted)] mt-1">
+          Manage your company details and settings.
+        </p>
       </div>
       <Card>
-        <CardHeader>
-          <CardTitle>Company Information</CardTitle>
-          <CardDescription>Manage your company details and settings</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <CompanySettingsForm company={JSON.parse(JSON.stringify(company))} readOnly={!canEdit} />
         </CardContent>
       </Card>

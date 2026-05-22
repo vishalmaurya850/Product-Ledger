@@ -1,142 +1,73 @@
-'use client';
+"use client"
 
 import Link from "next/link"
 import { Package } from "lucide-react"
 
+const footerLinks = {
+  Product: [
+    { href: "/features", label: "Features" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/changelog", label: "Changelog" },
+    { href: "/roadmap", label: "Roadmap" },
+  ],
+  Company: [
+    { href: "/about", label: "About" },
+    { href: "/blog", label: "Blog" },
+    { href: "/careers", label: "Careers" },
+    { href: "/contact", label: "Contact" },
+  ],
+  Legal: [
+    { href: "/privacy", label: "Privacy Policy" },
+    { href: "/terms", label: "Terms of Service" },
+    { href: "/cookie", label: "Cookie Policy" },
+  ],
+}
+
 export function LandingFooter() {
   return (
-    <footer className="w-full border-t bg-background py-6 md:py-12">
-      <div className="container px-4 mx-auto md:px-6">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-4 group">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <Package className="h-6 w-6 text-primary transition-all duration-500 group-hover:scale-125 group-hover:rotate-12" />
-              <span className="text-lg font-bold transition-all duration-300 group-hover:text-primary/90">
+    <footer className="w-full bg-[var(--surface-card)] py-16">
+      <div className="max-w-[980px] mx-auto px-6">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+          {/* Brand */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Package className="h-5 w-5 text-[var(--accent-cyan)]" />
+              <span className="text-[15px] font-semibold text-[var(--ink)]">
                 Product Ledger
               </span>
             </div>
-            <p className="text-sm text-muted-foreground transition-all duration-300 group-hover:text-muted-foreground/80">
+            <p className="text-[13px] text-[var(--text-secondary)] leading-[1.5]">
               A complete financial management system for businesses of all sizes.
             </p>
           </div>
-          
-          <div className="space-y-4 group">
-            <h3 className="text-lg font-semibold transition-all duration-300 group-hover:text-primary/90">
-              Product
-            </h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link 
-                  href="/features" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Features
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/pricing" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/changelog" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Changelog
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/roadmap" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Roadmap
-                </Link>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="space-y-4 group">
-            <h3 className="text-lg font-semibold transition-all duration-300 group-hover:text-primary/90">
-              Company
-            </h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link 
-                  href="/about" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/blog" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/careers" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/contact" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="space-y-4 group">
-            <h3 className="text-lg font-semibold transition-all duration-300 group-hover:text-primary/90">
-              Legal
-            </h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link 
-                  href="/privacy" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/terms" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/cookie" 
-                  className="text-muted-foreground hover:text-foreground transition-all duration-300 relative inline-block hover:scale-105 hover:-translate-y-0.5"
-                >
-                  Cookie Policy
-                </Link>
-              </li>
-            </ul>
-          </div>
+
+          {/* Link Columns */}
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category}>
+              <h3 className="text-[13px] font-semibold text-[var(--ink)] mb-3">
+                {category}
+              </h3>
+              <ul className="space-y-2">
+                {links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-[13px] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-        
-        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-          <span className="transition-all duration-300 hover:text-primary/80 cursor-default">
-            BONSOI Systems © {new Date().getFullYear()} Product Ledger. All rights reserved.
-          </span>
+
+        {/* Bottom Bar */}
+        <div className="mt-12 pt-6 border-t border-[var(--border-subtle)] text-center">
+          <p className="text-[13px] text-[var(--text-secondary)]">
+            <a href="https://bonsoi.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--accent-cyan)] transition-colors">BONSOI Systems</a> © {new Date().getFullYear()} Product Ledger. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

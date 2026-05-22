@@ -3,31 +3,30 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton"
 import { AdminCustomersTable } from "@/components/admin/admin-customers-table"
 
 export default function AdminCustomersPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Customer Management</h2>
-        <div className="flex items-center space-x-2">
-          <Link href="/admin/customers/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Customer
-            </Button>
-          </Link>
+    <div className="p-6 md:p-10 max-w-[1440px] mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-display-lg text-[var(--ink)]">Customers</h1>
+          <p className="text-[17px] tracking-[-0.374px] text-[var(--body-muted)] mt-1">
+            Manage your customer database.
+          </p>
         </div>
+        <Link href="/customers/new">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Customer
+          </Button>
+        </Link>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>All Customers</CardTitle>
-          <CardDescription>Manage your customer database</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Suspense fallback={<DashboardSkeleton />}>
             <AdminCustomersTable />
           </Suspense>

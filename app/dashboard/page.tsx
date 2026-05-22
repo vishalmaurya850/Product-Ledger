@@ -6,111 +6,93 @@ import { Overview } from "@/components/dashboard/overview"
 import { RecentSales } from "@/components/dashboard/recent-sales"
 import { OverdueWidget } from "@/components/dashboard/overdue-widget"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DollarSign, Users, Package, AlertTriangle } from "lucide-react"
+
 export default async function DashboardPage() {
-  // Check if user is authenticated
   const session = await auth()
   if (!session?.user?.id) {
     redirect("/auth/login")
   }
-  // Get company data
-  const companyId = session.user.companyId || session.user.id
-  // Get total customers
+
+  const companyId = session.user.companyId
+
+  // Get stats
   const totalCustomers = await db.customer.count({ where: { companyId } })
-  // Get total products
   const totalProducts = await db.product.count({ where: { companyId } })
-  // Get total ledger entries
   const totalLedgerEntries = await db.ledgerEntry.count({ where: { companyId } })
-  // Get total sales amount
+
   const salesResult = await db.ledgerEntry.aggregate({
     where: { companyId, type: "Sell" },
     _sum: { amount: true },
   })
   const totalSales = salesResult._sum.amount || 0
-  // Get total payments received
+
   const paymentsResult = await db.ledgerEntry.aggregate({
     where: { companyId, type: "Payment In" },
     _sum: { amount: true },
   })
   const totalPayments = paymentsResult._sum.amount || 0
-  // Get total outstanding amount
-  const outstandingResult = await db.ledgerEntry.aggregate({
-    where: { companyId, type: "Sell", status: { not: "Paid" } },
-    _sum: { amount: true },
-  })
-  const totalOutstanding = outstandingResult._sum.amount || 0
-  // Get total overdue amount
+
   const overdueResult = await db.ledgerEntry.aggregate({
     where: { companyId, status: "Overdue" },
     _sum: { amount: true },
   })
   const totalOverdue = overdueResult._sum.amount || 0
-  // Get overdue count
   const overdueCount = await db.ledgerEntry.count({ where: { companyId, status: "Overdue" } })
+
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+    <div className="p-6 md:p-10 max-w-[1440px] mx-auto">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-display-lg text-[var(--ink)]">Dashboard</h1>
+        <p className="text-[17px] tracking-[-0.374px] text-[var(--body-muted)] mt-1">
+          Business overview at a glance.
+        </p>
       </div>
-      <Tabs defaultValue="overview" className="space-y-4">
+
+      <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="overdue">Overdue</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">₹{totalSales.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">{totalLedgerEntries} transactions</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Customers</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalCustomers}</div>
-                <p className="text-xs text-muted-foreground">{totalPayments.toFixed(2)} in payments</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Products</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalProducts}</div>
-                <p className="text-xs text-muted-foreground">In inventory</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Overdue Amount</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">₹{totalOverdue.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">{overdueCount} overdue entries</p>
-              </CardContent>
-            </Card>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* Stats Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Sales"
+              value={`₹${totalSales.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
+              subtitle={`${totalLedgerEntries} transactions`}
+            />
+            <StatCard
+              title="Customers"
+              value={totalCustomers.toString()}
+              subtitle={`₹${totalPayments.toLocaleString("en-IN", { minimumFractionDigits: 2 })} in payments`}
+            />
+            <StatCard
+              title="Products"
+              value={totalProducts.toString()}
+              subtitle="In inventory"
+            />
+            <StatCard
+              title="Overdue"
+              value={`₹${totalOverdue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
+              subtitle={`${overdueCount} overdue entries`}
+              accent
+            />
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+
+          {/* Charts */}
+          <div className="grid gap-4 lg:grid-cols-7">
+            <Card className="lg:col-span-4">
               <CardHeader>
                 <CardTitle>Sales Overview</CardTitle>
                 <CardDescription>Monthly sales and payment trends</CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
+              <CardContent>
                 <Overview companyId={companyId} />
               </CardContent>
             </Card>
-            <Card className="col-span-3">
+            <Card className="lg:col-span-3">
               <CardHeader>
                 <CardTitle>Recent Sales</CardTitle>
                 <CardDescription>Latest transactions</CardDescription>
@@ -121,6 +103,7 @@ export default async function DashboardPage() {
             </Card>
           </div>
         </TabsContent>
+
         <TabsContent value="overdue" className="space-y-4">
           <Card>
             <CardHeader>
@@ -133,6 +116,32 @@ export default async function DashboardPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+function StatCard({
+  title,
+  value,
+  subtitle,
+  accent = false,
+}: {
+  title: string
+  value: string
+  subtitle: string
+  accent?: boolean
+}) {
+  return (
+    <div className="rounded-[18px] border border-[var(--hairline)] bg-[var(--canvas)] p-5">
+      <p className="text-[12px] font-semibold tracking-[-0.12px] text-[var(--ink-muted-48)] uppercase">
+        {title}
+      </p>
+      <p className={`mt-2 text-[28px] font-semibold tracking-[-0.28px] leading-[1.14] ${accent ? "text-[#ff3b30]" : "text-[var(--ink)]"}`}>
+        {value}
+      </p>
+      <p className="mt-1 text-[12px] tracking-[-0.12px] text-[var(--ink-muted-48)]">
+        {subtitle}
+      </p>
     </div>
   )
 }

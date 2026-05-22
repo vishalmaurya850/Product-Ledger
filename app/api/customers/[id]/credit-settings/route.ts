@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const companyId = session.user.companyId || session.user.id
+    const companyId = session.user.companyId
     const customerId = resolvedParams.id
 
     // Get customer credit settings
@@ -55,7 +55,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const companyId = session.user.companyId || session.user.id
+    const companyId = session.user.companyId
     const customerId = resolvedParams.id
 
     // Parse request body
@@ -64,6 +64,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     // Validate required fields
     if (body.creditLimit === undefined || body.gracePeriod === undefined || body.interestRate === undefined) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Validate that the customer exists and belongs to this company
+    const customer = await db.customer.findFirst({
+      where: {
+        id: customerId,
+        companyId,
+      },
+    })
+
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
 
     // Update or create credit settings using Prisma upsert

@@ -41,14 +41,14 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-    const companyId = session.user.companyId || session.user.id
+    const companyId = session.user.companyId
     const userId = session.user.id
     const rawData = await request.json()
     
     // Validate input
     const validation = validationSchemas.ledgerEntry.safeParse(rawData)
     if (!validation.success) {
-      return NextResponse.json({ error: "Invalid input", details: validation.error.errors }, { status: 400 })
+      return NextResponse.json({ error: "Invalid input", details: validation.error.issues }, { status: 400 })
     }
     
     // Sanitize data
@@ -66,10 +66,10 @@ export async function POST(request: Request) {
         type: data.type,
         invoiceNumber: data.invoiceNumber || `INV-${Date.now()}`,
         amount: amount,
-        description: data.description || null,
-        date: new Date(data.date),
-        dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        status: data.status || "Pending",
+        description: data.description || "",
+        date: new Date(data.date as string),
+        dueDate: data.dueDate ? new Date(data.dueDate as string) : null,
+        status: data.status || "Unpaid",
         companyId,
         createdBy: userId,
       },

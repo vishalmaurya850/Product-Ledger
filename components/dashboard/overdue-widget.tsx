@@ -133,13 +133,14 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
       {showSettings ? (
         <InlineCreditSettings
           customerId={companyId}
+          isCompanyLevel={true}
           initialSettings={creditSettings}
           onSettingsUpdate={handleCreditSettingsUpdate}
         />
       ) : (
         <Card>
           <CardContent className="p-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Default Credit Limit</p>
                 <p className="text-lg font-medium">
@@ -156,6 +157,12 @@ export function OverdueWidget({ companyId }: OverdueWidgetProps) {
                 <p className="text-sm text-muted-foreground">Interest Rate</p>
                 <p className="text-lg font-medium">
                   {(creditSettings.interestRate ?? 0)}% per annum
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Fine Amount</p>
+                <p className="text-lg font-medium">
+                  ₹{(creditSettings.minimumFee ?? creditSettings.fineAmount ?? 0).toFixed(2)}
                 </p>
               </div>
             </div>

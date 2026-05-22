@@ -179,10 +179,11 @@ interface ProductLedgerDB extends DBSchema {
 
 class IndexedDBManager {
   private db: IDBPDatabase<ProductLedgerDB> | null = null
-  private isOnline = navigator.onLine
+  private isOnline = typeof navigator !== "undefined" ? navigator.onLine : true
   private syncInterval: NodeJS.Timeout | null = null
 
   constructor() {
+    if (typeof window === "undefined") return // Guard against SSR
     this.initializeDB()
     this.setupEventListeners()
     this.startSyncProcess()
@@ -714,22 +715,29 @@ class IndexedDBManager {
   }
 }
 
-// Create singleton instance
-const indexedDBManager = new IndexedDBManager()
+// Create singleton instance (lazy initialization for SSR safety)
+let indexedDBManager: IndexedDBManager | null = null
+
+function getManager(): IndexedDBManager {
+  if (!indexedDBManager) {
+    indexedDBManager = new IndexedDBManager()
+  }
+  return indexedDBManager
+}
 
 // Export convenience functions
-export const addItem = indexedDBManager.addItem.bind(indexedDBManager)
-export const updateItem = indexedDBManager.updateItem.bind(indexedDBManager)
-export const deleteItem = indexedDBManager.deleteItem.bind(indexedDBManager)
-export const getItemById = indexedDBManager.getItemById.bind(indexedDBManager)
-export const getAllItems = indexedDBManager.getAllItems.bind(indexedDBManager)
-export const searchItems = indexedDBManager.searchItems.bind(indexedDBManager)
-export const getCachedData = indexedDBManager.getCachedData.bind(indexedDBManager)
-export const setCachedData = indexedDBManager.setCachedData.bind(indexedDBManager)
-export const batchOperation = indexedDBManager.batchOperation.bind(indexedDBManager)
-export const getSyncStatus = indexedDBManager.getSyncStatus.bind(indexedDBManager)
-export const clearCompletedSyncItems = indexedDBManager.clearCompletedSyncItems.bind(indexedDBManager)
-export const getStorageUsage = indexedDBManager.getStorageUsage.bind(indexedDBManager)
-export const forceSyncFromServer = indexedDBManager.forceSyncFromServer.bind(indexedDBManager)
+export const addItem: IndexedDBManager["addItem"] = (...args) => getManager().addItem(...args)
+export const updateItem: IndexedDBManager["updateItem"] = (...args) => getManager().updateItem(...args)
+export const deleteItem: IndexedDBManager["deleteItem"] = (...args) => getManager().deleteItem(...args)
+export const getItemById: IndexedDBManager["getItemById"] = (...args) => getManager().getItemById(...args)
+export const getAllItems: IndexedDBManager["getAllItems"] = (...args) => getManager().getAllItems(...args)
+export const searchItems: IndexedDBManager["searchItems"] = (...args) => getManager().searchItems(...args)
+export const getCachedData: IndexedDBManager["getCachedData"] = (...args) => getManager().getCachedData(...args)
+export const setCachedData: IndexedDBManager["setCachedData"] = (...args) => getManager().setCachedData(...args)
+export const batchOperation: IndexedDBManager["batchOperation"] = (...args) => getManager().batchOperation(...args)
+export const getSyncStatus: IndexedDBManager["getSyncStatus"] = (...args) => getManager().getSyncStatus(...args)
+export const clearCompletedSyncItems: IndexedDBManager["clearCompletedSyncItems"] = (...args) => getManager().clearCompletedSyncItems(...args)
+export const getStorageUsage: IndexedDBManager["getStorageUsage"] = (...args) => getManager().getStorageUsage(...args)
+export const forceSyncFromServer: IndexedDBManager["forceSyncFromServer"] = (...args) => getManager().forceSyncFromServer(...args)
 
-export default indexedDBManager
+export default getManager

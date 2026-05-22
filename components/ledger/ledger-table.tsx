@@ -52,6 +52,7 @@ export interface CreditSettings {
   gracePeriod: number
   interestRate: number
   fineAmount: number
+  minimumFee?: number
 }
 
 interface LedgerTableProps {

@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url)
     const limitParam = url.searchParams.get("limit")
     const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined
-    const companyId = session.user.companyId || session.user.id
+    const companyId = session.user.companyId
     console.log("Fetching overdue settings for company:", companyId)
     // Get overdue settings for this company
     const settings = await db.overdueSettings.findUnique({

@@ -66,7 +66,14 @@ export async function POST(request: Request) {
           password: hashedPassword,
           companyId: company.id,
           role: "admin",
-          permissions: ["ledger_view", "products_view", "customers_view", "settings_view", "reports_view"],
+          permissions: [
+            "ledger_view", "ledger_create", "ledger_edit", "ledger_delete",
+            "products_view", "products_create", "products_edit", "products_delete",
+            "customers_view", "customers_create", "customers_edit", "customers_delete",
+            "users_view", "users_create", "users_edit", "users_delete",
+            "reports_view",
+            "settings_view", "settings_edit",
+          ],
           emailVerified: null, // Explicitly null
         }
       })

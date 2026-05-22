@@ -272,14 +272,14 @@ export const validationSchemas = {
   }),
   
   ledgerEntry: z.object({
-    customerId: z.string().uuid(),
+    customerId: z.string().min(1),
     type: z.enum(["Sell", "Payment In", "Payment Out"]),
     invoiceNumber: z.string().max(100).optional(),
     amount: z.number().positive().max(999999999),
     description: z.string().max(1000).optional().or(z.literal("")),
     date: z.string().datetime().or(z.date()),
     dueDate: z.string().datetime().or(z.date()).optional().nullable(),
-    status: z.enum(["Pending", "Paid", "Overdue", "Cancelled"]).optional(),
+    status: z.enum(["Paid", "Unpaid", "Overdue", "Partially Paid", "Pending", "Cancelled"]).optional(),
   }),
   
   user: z.object({

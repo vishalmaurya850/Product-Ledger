@@ -15,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const companyId = session.user.companyId || session.user.id;
+    const companyId = session.user.companyId;
     console.log(`Fetching product with ID: ${resolvedParams.id}`);
 
     const product = await db.product.findUnique({
@@ -46,8 +46,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const resolvedParams = await params;
     const data = await request.json();
 
-    console.log(`Updating product with ID: ${resolvedParams.id}`);
-
     // Create FormData to pass to the server action
     const formData = new FormData();
     formData.append("name", data.name);
@@ -56,6 +54,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     formData.append("stock", String(data.stock));
     formData.append("unit", data.unit || "");
     formData.append("imageUrl", data.imageUrl || "");
+    formData.append("sku", data.sku || "");
+    formData.append("category", data.category || "");
 
     const result = await updateProduct(resolvedParams.id, formData);
 
@@ -67,8 +67,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         status: result.unauthorized ? 403 : 500 
       });
     }
-
-    console.log("Product updated successfully");
 
     return NextResponse.json({
       success: true,

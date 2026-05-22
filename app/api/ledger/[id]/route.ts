@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -19,7 +20,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Get ledger entry by ID and ensure it belongs to the same company
     const entry = await db.ledgerEntry.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         customer: {
           select: {
@@ -41,8 +42,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -58,7 +60,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     // Verify entry belongs to company before deleting
     const existing = await db.ledgerEntry.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { companyId: true }
     })
 
@@ -67,7 +69,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     await db.ledgerEntry.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ success: true })

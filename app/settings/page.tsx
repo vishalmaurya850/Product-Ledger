@@ -128,23 +128,26 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+      <div className="p-6 md:p-10 max-w-[1440px] mx-auto">
+        <div className="mb-8">
+          <h1 className="text-display-lg text-[var(--ink)]">Settings</h1>
         </div>
         <Card>
-          <CardHeader>
-            <CardTitle>Loading settings...</CardTitle>
-          </CardHeader>
+          <CardContent className="flex items-center justify-center h-32 pt-6">
+            <p className="text-[14px] tracking-[-0.224px] text-[var(--ink-muted-48)]">Loading settings...</p>
+          </CardContent>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+    <div className="p-6 md:p-10 max-w-[1440px] mx-auto">
+      <div className="mb-8">
+        <h1 className="text-display-lg text-[var(--ink)]">Settings</h1>
+        <p className="text-[17px] tracking-[-0.374px] text-[var(--body-muted)] mt-1">
+          Configure application preferences.
+        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

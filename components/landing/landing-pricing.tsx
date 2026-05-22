@@ -11,17 +11,19 @@ export function LandingPricing() {
   return (
     <motion.section
       id="pricing"
-      className="w-full py-12 md:py-24 lg:py-32"
+      className="w-full py-12 md:py-24 lg:py-32 bg-[var(--surface-card)]"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <div className="container px-4 mx-auto md:px-6">
+      <div className="max-w-[980px] mx-auto px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
-            <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">Pricing</div>
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Simple, Transparent Pricing</h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            <div className="inline-block rounded-[8px] bg-[var(--accent-cyan)] px-3 py-1 text-[13px] font-medium text-white">
+              Pricing
+            </div>
+            <h2 className="text-display-lg text-[var(--ink)]">Simple, Transparent Pricing</h2>
+            <p className="max-w-[700px] text-[16px] text-[var(--text-secondary)] leading-relaxed">
               Choose the plan that&apos;s right for your business. All plans include all features.
             </p>
           </div>
@@ -29,21 +31,21 @@ export function LandingPricing() {
 
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
           {/* Starter Plan */}
-          <Card className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+          <Card className="flex flex-col transition-all duration-300 hover:shadow-[var(--product-shadow)] hover:-translate-y-1 bg-[var(--canvas)]">
             <CardHeader>
-              <CardTitle>Starter</CardTitle>
+              <CardTitle className="text-[18px]">Starter</CardTitle>
               <CardDescription>Perfect for small businesses just getting started.</CardDescription>
               <div className="mt-4 flex items-baseline">
-                <span className="text-4xl font-bold">$29</span>
-                <span className="ml-1 text-muted-foreground">/month</span>
+                <span className="text-kpi-sm text-[var(--ink)]">$29</span>
+                <span className="ml-1 text-[14px] text-[var(--text-secondary)]">/month</span>
               </div>
             </CardHeader>
             <CardContent className="flex-1">
-              <ul className="space-y-2">
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 500 ledger entries</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 100 products</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 50 customers</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Basic reports</li>
+              <ul className="space-y-2 text-[14px]">
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Up to 500 ledger entries</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Up to 100 products</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Up to 50 customers</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Basic reports</li>
               </ul>
             </CardContent>
             <CardFooter>
@@ -52,23 +54,23 @@ export function LandingPricing() {
           </Card>
 
           {/* Business Plan */}
-          <Card className="flex flex-col border-primary transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+          <Card className="flex flex-col border-[var(--accent-cyan)] transition-all duration-300 hover:shadow-[var(--product-shadow)] hover:-translate-y-1 bg-[var(--canvas)]">
             <CardHeader>
-              <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">Popular</div>
-              <CardTitle className="mt-4">Business</CardTitle>
+              <div className="inline-block rounded-[8px] bg-[var(--accent-cyan)] px-3 py-1 text-[13px] font-medium text-white w-fit">Popular</div>
+              <CardTitle className="mt-4 text-[18px]">Business</CardTitle>
               <CardDescription>For growing businesses with more needs.</CardDescription>
               <div className="mt-4 flex items-baseline">
-                <span className="text-4xl font-bold">$79</span>
-                <span className="ml-1 text-muted-foreground">/month</span>
+                <span className="text-kpi-sm text-[var(--accent-cyan)]">$79</span>
+                <span className="ml-1 text-[14px] text-[var(--text-secondary)]">/month</span>
               </div>
             </CardHeader>
             <CardContent className="flex-1">
-              <ul className="space-y-2">
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Unlimited ledger entries</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 1,000 products</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Up to 500 customers</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Advanced reports</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Email notifications</li>
+              <ul className="space-y-2 text-[14px]">
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Unlimited ledger entries</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Up to 1,000 products</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Up to 500 customers</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Advanced reports</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Email notifications</li>
               </ul>
             </CardContent>
             <CardFooter>
@@ -77,22 +79,22 @@ export function LandingPricing() {
           </Card>
 
           {/* Enterprise Plan */}
-          <Card className="flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+          <Card className="flex flex-col transition-all duration-300 hover:shadow-[var(--product-shadow)] hover:-translate-y-1 bg-[var(--canvas)]">
             <CardHeader>
-              <CardTitle>Enterprise</CardTitle>
+              <CardTitle className="text-[18px]">Enterprise</CardTitle>
               <CardDescription>For large businesses with complex requirements.</CardDescription>
               <div className="mt-4 flex items-baseline">
-                <span className="text-4xl font-bold">$199</span>
-                <span className="ml-1 text-muted-foreground">/month</span>
+                <span className="text-kpi-sm text-[var(--ink)]">$199</span>
+                <span className="ml-1 text-[14px] text-[var(--text-secondary)]">/month</span>
               </div>
             </CardHeader>
             <CardContent className="flex-1">
-              <ul className="space-y-2">
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Unlimited everything</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Priority support</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Custom integrations</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />Dedicated account manager</li>
-                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-green-500" />On-premise deployment option</li>
+              <ul className="space-y-2 text-[14px]">
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Unlimited everything</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Priority support</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Custom integrations</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />Dedicated account manager</li>
+                <li className="flex items-center"><Check className="mr-2 h-4 w-4 text-[var(--accent-green)]" />On-premise deployment option</li>
               </ul>
             </CardContent>
             <CardFooter>

@@ -11,7 +11,7 @@ export default function AdminPage() {
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Admin Portal</h2>
+        <h2 className="text-display-md text-[var(--ink)]">Admin Portal</h2>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
@@ -26,92 +26,32 @@ export default function AdminPage() {
           </Suspense>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* <Link href="/admin/ledger">
-              <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Ledger Management</CardTitle>
-                    <BarChart3 className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <CardDescription>Manage all financial transactions</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>View, add, edit, and delete ledger entries. Track cash flow and manage payments.</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/admin/products">
-              <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Product Management</CardTitle>
-                    <Package className="h-5 w-5 text-green-500" />
-                  </div>
-                  <CardDescription>Manage your product inventory</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Add new products, update stock levels, and manage product information.</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/admin/customers">
-              <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Customer Management</CardTitle>
-                    <Users className="h-5 w-5 text-purple-500" />
-                  </div>
-                  <CardDescription>Manage your customer database</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Add, edit, and manage customer information and track customer transactions.</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/admin/overdue">
-              <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Overdue Management</CardTitle>
-                    <CreditCard className="h-5 w-5 text-red-500" />
-                  </div>
-                  <CardDescription>Manage overdue payments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Track overdue payments, apply interest charges, and send payment reminders.</p>
-                </CardContent>
-              </Card>
-            </Link> */}
-
             <Link href="/admin/settings">
-              <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
+              <Card className="h-full transition-all hover:shadow-[var(--product-shadow)]">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>System Settings</CardTitle>
-                    <Settings className="h-5 w-5 text-amber-500" />
+                    <Settings className="h-5 w-5 text-[var(--accent-orange)]" />
                   </div>
                   <CardDescription>Configure system parameters</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Configure overdue interest rates, payment terms, and other system settings.</p>
+                  <p className="text-[14px] text-[var(--text-secondary)]">Configure overdue interest rates, payment terms, and other system settings.</p>
                 </CardContent>
               </Card>
             </Link>
 
             <Link href="/admin/users">
-              <Card className="h-full transition-all hover:bg-accent hover:text-accent-foreground">
+              <Card className="h-full transition-all hover:shadow-[var(--product-shadow)]">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>User Management</CardTitle>
-                    <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                    <ShieldCheck className="h-5 w-5 text-[var(--accent-green)]" />
                   </div>
                   <CardDescription>Manage system users</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>Add, edit, and manage user accounts and permissions.</p>
+                  <p className="text-[14px] text-[var(--text-secondary)]">Add, edit, and manage user accounts and permissions.</p>
                 </CardContent>
               </Card>
             </Link>

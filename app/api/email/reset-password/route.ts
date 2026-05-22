@@ -1,4 +1,14 @@
-// import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
+
+// This route is deprecated - email sending is handled by lib/mail.ts
+// Keeping the file for reference but providing a stub handler
+export async function POST() {
+  return NextResponse.json(
+    { error: "This endpoint is deprecated. Use the auth flow instead." },
+    { status: 410 }
+  )
+}
+
 // import nodemailer from "nodemailer"
 
 // export async function POST(request: Request) {

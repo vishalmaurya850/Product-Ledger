@@ -150,7 +150,7 @@ export default function RegisterPage() {
               Enter the 6-digit code sent to <strong>{email}</strong>
             </CardDescription>
           </CardHeader>
-          <form onSubmit={onVerify}>
+          <form onSubmit={onVerify} action="#">
             <CardContent className="space-y-4 flex flex-col items-center">
               <div className="space-y-2 w-full flex justify-center">
                 <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
@@ -195,7 +195,7 @@ export default function RegisterPage() {
           <CardTitle className="text-2xl">Create an Account</CardTitle>
           <CardDescription>Enter your information to create an account</CardDescription>
         </CardHeader>
-        <form onSubmit={onRegister}>
+        <form onSubmit={onRegister} action="#">
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>

@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const companyId = session.user.companyId || session.user.id
+    const companyId = session.user.companyId
     const customerId = resolvedParams.id
 
     console.log(`Fetching ledger entries for customer ${customerId} and company ${companyId}`)

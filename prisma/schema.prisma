@@ -63,6 +63,7 @@ model OverdueSettings {
   interestRate      Float
   compoundingPeriod String?
   minimumFee        Float?
+  creditLimit       Float?
   updatedAt         DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id])

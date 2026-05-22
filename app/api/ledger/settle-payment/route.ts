@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       status: isFullyPaid ? "Paid" : "Partially Paid",
     }
     if (isFullyPaid) {
-      updateData.settledAt = new Date()
+      updateData.paidDate = new Date()
     }
     await db.ledgerEntry.update({
       where: { id: entryId },

@@ -10,7 +10,7 @@ import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { FormLabel } from "@/components/ui/form"
+import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -79,19 +79,20 @@ export default function NewLedgerEntryPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <FormLabel htmlFor="type">Entry Type</FormLabel>
-                <Select name="type" defaultValue="Cash In" required>
+                <Label htmlFor="type">Entry Type</Label>
+                <Select name="type" defaultValue="Sell" required>
                   <SelectTrigger id="type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cash In">Cash In</SelectItem>
-                    <SelectItem value="Cash Out">Cash Out</SelectItem>
+                    <SelectItem value="Sell">Sell</SelectItem>
+                    <SelectItem value="Payment In">Payment In</SelectItem>
+                    <SelectItem value="Payment Out">Payment Out</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <FormLabel htmlFor="amount">Amount</FormLabel>
+                <Label htmlFor="amount">Amount</Label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">₹</span>
                   <Input
@@ -108,12 +109,12 @@ export default function NewLedgerEntryPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <FormLabel htmlFor="description">Description</FormLabel>
+              <Label htmlFor="description">Description</Label>
               <Input id="description" name="description" placeholder="Enter a description for this entry" required />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <FormLabel>Date</FormLabel>
+                <Label>Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -130,7 +131,7 @@ export default function NewLedgerEntryPage() {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <FormLabel>Due Date (optional)</FormLabel>
+                <Label>Due Date (optional)</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -148,20 +149,19 @@ export default function NewLedgerEntryPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <FormLabel htmlFor="status">Status</FormLabel>
-              <Select name="status" defaultValue="Pending" required>
+              <Label htmlFor="status">Status</Label>
+              <Select name="status" defaultValue="Unpaid" required>
                 <SelectTrigger id="status">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Paid">Paid</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Overdue">Overdue</SelectItem>
+                  <SelectItem value="Unpaid">Unpaid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <FormLabel htmlFor="notes">Notes (optional)</FormLabel>
+              <Label htmlFor="notes">Notes (optional)</Label>
               <Textarea id="notes" name="notes" placeholder="Additional notes or details" />
             </div>
           </CardContent>

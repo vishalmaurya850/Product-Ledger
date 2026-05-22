@@ -10,8 +10,7 @@ export async function GET() {
       console.log("No authenticated user found in session")
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-    const companyId = session.user.companyId || session.user.id
-    console.log("Using companyId for query:", companyId)
+    const companyId = session.user.companyId
     const customers = await db.customer.findMany({
       where: { companyId },
       orderBy: { name: 'asc' },
@@ -19,7 +18,6 @@ export async function GET() {
         customerCreditSettings: true,
       }
     })
-    console.log(`Fetched ${customers.length} customers for company ${companyId}`)
     return NextResponse.json(customers, {
       headers: {
         "Cache-Control": "no-store, max-age=0",
@@ -37,15 +35,14 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-    const companyId = session.user.companyId || session.user.id
+    const companyId = session.user.companyId
     const userId = session.user.id
-    console.log("Using companyId for new customer:", companyId)
     const rawData = await request.json()
     
     // Validate input
     const validation = validationSchemas.customer.safeParse(rawData)
     if (!validation.success) {
-      return NextResponse.json({ error: "Invalid input", details: validation.error.errors }, { status: 400 })
+      return NextResponse.json({ error: "Invalid input", details: validation.error.issues }, { status: 400 })
     }
     
     // Additional email validation
@@ -59,12 +56,12 @@ export async function POST(request: Request) {
     const customer = await db.customer.create({
       data: {
         name: data.name,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address || null,
-        panCard: data.panCard || null,
-        aadharCard: data.aadharCard || null,
-        imageUrl: data.imageUrl || null,
+        email: data.email || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        panCard: data.panCard || undefined,
+        aadharCard: data.aadharCard || undefined,
+        imageUrl: data.imageUrl || undefined,
         companyId,
         createdBy: userId,
       }

@@ -4,9 +4,9 @@ import { db, isOverdue } from "@/lib/db"
 // This route is meant to be called by a cron job to update overdue status
 export async function GET(request: Request) {
   try {
-    // Check for a secret key to secure the endpoint
-    const { searchParams } = new URL(request.url)
-    const secretKey = searchParams.get("key")
+    // Check for a secret key via Authorization header
+    const authHeader = request.headers.get("authorization")
+    const secretKey = authHeader?.replace("Bearer ", "") || new URL(request.url).searchParams.get("key")
 
     if (secretKey !== process.env.CRON_SECRET_KEY) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

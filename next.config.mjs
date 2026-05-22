@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true,
   typescript: {
+    // TODO: Fix recharts and react-day-picker type incompatibilities, then set to false
     ignoreBuildErrors: true,
   },
   images: {

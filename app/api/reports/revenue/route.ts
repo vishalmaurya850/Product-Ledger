@@ -8,7 +8,7 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-    const companyId = session.user.id
+    const companyId = session.user.companyId
     try {
       // Get data for the last 6 months
       const months = []
@@ -16,20 +16,21 @@ export async function GET() {
         const date = subMonths(new Date(), i)
         const start = startOfMonth(date)
         const end = endOfMonth(date)
-        // Get cash in for this month
+        // Get cash in for this month (Sell entries that are paid)
         const cashInResult = await db.ledgerEntry.aggregate({
           where: {
             companyId,
-            type: "Cash In",
+            type: "Sell",
+            status: "Paid",
             date: { gte: start, lte: end },
           },
           _sum: { amount: true },
         })
-        // Get cash out for this month
+        // Get cash out for this month (Payment Out entries)
         const cashOutResult = await db.ledgerEntry.aggregate({
           where: {
             companyId,
-            type: "Cash Out",
+            type: "Payment Out",
             date: { gte: start, lte: end },
           },
           _sum: { amount: true },

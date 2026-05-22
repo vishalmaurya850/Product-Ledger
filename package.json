@@ -1,6 +1,6 @@
 {
   "name": "productledger",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -12,10 +12,9 @@
     "prisma:migrate": "npx prisma migrate dev"
   },
   "dependencies": {
-    "@auth/core": "^0.41.1",
     "@hookform/resolvers": "^3.10.0",
-    "@prisma/adapter-pg": "^7.0.0",
-    "@prisma/client": "^7.0.0",
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "^7.7.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
@@ -44,7 +43,7 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-visually-hidden": "^1.2.4",
-    "autoprefixer": "^10.4.22",
+    "@tailwindcss/postcss": "^4.3.0",
     "bcryptjs": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -54,14 +53,13 @@
     "dotenv": "^17.2.3",
     "embla-carousel-react": "8.5.1",
     "framer-motion": "^12.23.24",
-    "gcp-metadata": "latest",
     "idb": "^8.0.3",
     "input-otp": "1.4.1",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.454.0",
-    "next": "16.0.10",
-    "next-auth": "5.0.0-beta.30",
+    "next": "^16.2.6",
+    "next-auth": "5.0.0-beta.31",
     "next-themes": "^0.4.6",
     "nodemailer": "7.0.10",
     "pg": "^8.16.3",
@@ -74,7 +72,6 @@
     "recharts": "latest",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "vaul": "1.1.2",
     "zod": "4.1.12"
@@ -87,10 +84,10 @@
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.39.1",
-    "eslint-config-next": "15.3.0",
+    "eslint-config-next": "^16.2.6",
     "postcss": "^8.5.6",
-    "prisma": "^7.0.0",
-    "tailwindcss": "^3.4.18",
+    "prisma": "^7.7.0",
+    "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3"
   }
 }

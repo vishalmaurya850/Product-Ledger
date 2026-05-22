@@ -1,179 +1,388 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+/* ============================================================
+   WATTVISION-INSPIRED DESIGN SYSTEM — Product Ledger
+   Light mode interface. Technical reliability & control.
+   Accent: Cyan #00BCD4. Alert: Red #FF453A. Normal: Green #32D74B.
+   ============================================================ */
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--canvas);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface-card);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface-card);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--accent-cyan);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--surface-card);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-card);
+  --color-muted-foreground: var(--text-secondary);
+  --color-accent: var(--surface-card);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: #FF453A;
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--border-subtle);
+  --color-input: var(--border-subtle);
+  --color-ring: var(--accent-cyan);
+  --color-chart-1: #00BCD4;
+  --color-chart-2: #32D74B;
+  --color-chart-3: #FF9500;
+  --color-chart-4: #BF5AF2;
+  --color-chart-5: #FF453A;
+  --color-sidebar: var(--canvas);
+  --color-sidebar-foreground: var(--ink);
+  --color-sidebar-primary: var(--accent-cyan);
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: var(--surface-card);
+  --color-sidebar-accent-foreground: var(--ink);
+  --color-sidebar-border: var(--border-subtle);
+  --color-sidebar-ring: var(--accent-cyan);
+
+  /* Radius — WattVision uses 16px for cards */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  /* Animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+/* ============================================================
+   DESIGN TOKENS — WattVision Light Mode
+   ============================================================ */
+
+:root {
+  /* Surface */
+  --canvas: #ffffff;
+  --surface-card: #F7F8FA;
+  --surface-elevated: #EEF0F4;
+  --surface-hover: #E8EBF0;
+  --surface-black: #1A2332;
+
+  /* Legacy aliases for compatibility */
+  --parchment: #F7F8FA;
+  --surface-pearl: #EEF0F4;
+  --surface-tile-1: #F7F8FA;
+  --surface-tile-2: #EEF0F4;
+  --surface-tile-3: #FAFBFC;
+  --surface-chip: rgba(0, 188, 212, 0.08);
+
+  /* Text */
+  --ink: #1A2332;
+  --ink-muted-80: #374151;
+  --ink-muted-48: #6B7280;
+  --body-muted: #6B7280;
+  --text-secondary: #6B7280;
+  --on-primary: #ffffff;
+  --on-dark: #ffffff;
+
+  /* Accents — WattVision Palette */
+  --accent-cyan: #00BCD4;
+  --accent-cyan-glow: rgba(0, 188, 212, 0.08);
+  --accent-cyan-hover: #00ACC1;
+  --accent-red: #FF453A;
+  --accent-red-bg: #FEF2F2;
+  --accent-green: #32D74B;
+  --accent-green-bg: rgba(50, 215, 75, 0.08);
+  --accent-orange: #FF9500;
+
+  /* Legacy accent aliases */
+  --action-blue: #00BCD4;
+  --action-blue-focus: #00ACC1;
+  --action-blue-on-dark: #00E5FF;
+
+  /* Borders */
+  --border-subtle: #E5E7EB;
+  --hairline: #E5E7EB;
+  --divider-soft: rgba(0, 0, 0, 0.04);
+
+  /* Elevation */
+  --product-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --subtle-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --glow-cyan: 0 0 16px rgba(0, 188, 212, 0.15);
+
+  /* Spacing — Multiples of 8px */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-section: 80px;
+
+  /* Typography */
+  --font-display: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-text: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+}
+
+.dark {
+  --canvas: #121212;
+  --surface-card: #1E1E1E;
+  --surface-elevated: #252525;
+  --surface-hover: #2C2C2E;
+  --surface-black: #0A0A0A;
+  --parchment: #1E1E1E;
+  --ink: #FFFFFF;
+  --ink-muted-80: #E0E0E0;
+  --ink-muted-48: #98989D;
+  --body-muted: #98989D;
+  --text-secondary: #98989D;
+  --accent-cyan: #00E5FF;
+  --accent-cyan-glow: rgba(0, 229, 255, 0.12);
+  --accent-cyan-hover: #33EBFF;
+  --accent-red-bg: #3A1C1C;
+  --accent-green-bg: rgba(50, 215, 75, 0.12);
+  --action-blue: #00E5FF;
+  --action-blue-focus: #33EBFF;
+  --border-subtle: #2C2C2E;
+  --hairline: #2C2C2E;
+  --divider-soft: rgba(255, 255, 255, 0.06);
+  --surface-chip: rgba(0, 229, 255, 0.12);
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
+* {
+  border-color: var(--border-subtle);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  background-color: var(--canvas);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* ============================================================
+   TYPOGRAPHY UTILITIES — WattVision
+   ============================================================ */
+
+.text-hero-display {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+.text-display-lg {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+.text-display-md {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
-/* Print styles for professional invoices */
+.text-lead {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.text-lead-airy {
+  font-family: var(--font-text);
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+
+.text-tagline {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.text-body-strong {
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.text-body {
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.text-caption {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.text-caption-strong {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.text-fine-print {
+  font-family: var(--font-text);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+/* KPI Metrics — Monospace for numbers */
+.text-kpi {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.text-kpi-sm {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   COMPONENT OVERRIDES — WattVision
+   ============================================================ */
+
+/* Cards: light surface, subtle border, 16px radius */
+.wv-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: none;
+}
+
+/* Alert Card — Red accent */
+.wv-alert {
+  background: var(--accent-red-bg);
+  border: none;
+  border-left: 4px solid var(--accent-red);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--accent-red);
+}
+
+/* Live indicator */
+.wv-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-green);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wv-live::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse-live 2s infinite;
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Glow effect for primary accent elements */
+.wv-glow {
+  box-shadow: var(--glow-cyan);
+}
+
+/* Active/press state for interactive elements */
+.apple-press:active,
+.wv-press:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Link style — Cyan accent */
+.apple-link,
+.wv-link {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  cursor: pointer;
+}
+.apple-link:hover,
+.wv-link:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+
 @media print {
   body {
     background: white !important;
     color: black !important;
   }
-  
+
   .print\:hidden {
     display: none !important;
   }
-  
-  .print\:bg-white {
-    background: white !important;
-  }
-  
-  .print\:text-gray-600 {
-    color: #4b5563 !important;
-  }
-  
-  .print\:text-gray-500 {
-    color: #6b7280 !important;
-  }
-  
-  .print\:text-gray-700 {
-    color: #374151 !important;
-  }
-  
-  .print\:text-green-700 {
-    color: #15803d !important;
-  }
-  
-  .print\:bg-gray-50 {
-    background: #f9fafb !important;
-  }
-  
-  .print\:bg-gray-100 {
-    background: #f3f4f6 !important;
-  }
-  
-  .print\:border-gray-300 {
-    border-color: #d1d5db !important;
-  }
-  
-  .print\:border-0 {
-    border: 0 !important;
-  }
-  
-  .print\:shadow-none {
-    box-shadow: none !important;
-  }
-  
-  .print\:border {
-    border-width: 1px !important;
-  }
-  
-  .print\:hover\:bg-white:hover {
-    background: white !important;
-  }
-  
-  /* Remove shadows and rounded corners for print */
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
-  /* Ensure proper page breaks */
-  .invoice-page {
-    page-break-inside: avoid;
-  }
-  
-  /* Optimize table printing */
-  table {
-    page-break-inside: auto;
-  }
-  
-  tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
-  }
-  
-  /* Set proper margins for print */
+
   @page {
     margin: 1cm;
   }
