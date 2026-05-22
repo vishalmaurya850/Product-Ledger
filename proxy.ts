@@ -141,11 +141,20 @@ export default auth((req) => {
   // Public paths that don't require authentication
   const publicPaths = ["/", "/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password","/privacy", "/terms", "/cookie", "/about", "/blog", "/careers", "/contact", "/features","/pricing","/changelog","/roadmap"]
   if (publicPaths.includes(pathname) || publicPaths.some((path) => pathname.startsWith(`${path}/`))) {
+    // If user is signed in and trying to access auth pages, redirect to dashboard
+    if (session?.user && pathname.startsWith("/auth/")) {
+      return NextResponse.redirect(new URL("/dashboard", req.url))
+    }
     return NextResponse.next()
   }
 
   // Allow static files (json, txt, xml, etc.) at root level
   if (/^\/.+\.(json|txt|xml|ico|svg|png|jpg|jpeg|gif|webp|woff|woff2|ttf|eot)$/.test(pathname)) {
+    return NextResponse.next()
+  }
+
+  // Allow .well-known directory (funding manifest, etc.)
+  if (pathname.startsWith("/.well-known")) {
     return NextResponse.next()
   }
 
@@ -238,5 +247,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|funding\\.json|.*\\.ico|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.webp).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|funding\\.json|\\.well-known|.*\\.ico|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.webp).*)"],
 }
