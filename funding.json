@@ -24,7 +24,7 @@
             },
             "repositoryUrl": {
                 "url": "https://github.com/vishalmaurya850/Product-Ledger",
-                "wellKnown": "https://product-ledger.vercel.app/.well-known/funding-manifest-urls"
+                "wellKnown": "https://github.com/vishalmaurya850/Product-Ledger/blob/master/public/.well-known/funding-manifest-urls"
             },
             "licenses": [
                 "spdx:MIT"
