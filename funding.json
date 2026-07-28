@@ -20,11 +20,11 @@
             "description": "A comprehensive business ledger management system for product-selling companies built with Next.js 16, Prisma ORM 7, and PostgreSQL. Features include real-time data synchronization with IndexedDB, intelligent overdue management with configurable interest rates, automated credit limit handling, PDF invoice generation, multi-tenant architecture with role-based access control, and offline-first capability.",
             "webpageUrl": {
                 "url": "https://product-ledger.vercel.app",
-                "wellKnown": ""
+                "wellKnown": "https://product-ledger.vercel.app/.well-known/funding-manifest-urls"
             },
             "repositoryUrl": {
                 "url": "https://github.com/vishalmaurya850/Product-Ledger",
-                "wellKnown": ""
+                "wellKnown": "https://product-ledger.vercel.app/.well-known/funding-manifest-urls"
             },
             "licenses": [
                 "spdx:MIT"
